@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthyBe</title>
+    <link rel="icon" href="image/favlogo.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="w-full min-h-screen bg-slate-900 text-white">
+    <!-- Responsive Navigation Bar -->
+    <header class="w-full bg-slate-800 text-white shadow-md">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="image/favlogo.ico" alt="logo" class="w-8 h-8 rounded-md">
+          <span class="font-bold text-lg">HealthyBe</span>
+        </div>
+        <nav class="hidden md:flex items-center gap-6">
+          <a href="component/login/login.html" class="text-md text-white hover:text-yellow-400">Login</a>
+          <a href="component/reports.html" class="text-md text-white hover:text-yellow-400">Reports</a>
+          <a href="component/insurance.html" class="text-md text-white hover:text-yellow-400">Insurance</a>
+          <a href="component/emergency.html" class="text-md text-white hover:text-yellow-400">Emergency</a>
+        </nav>
+        <button id="navToggle" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <i class="fa fa-bars text-xl"></i>
+        </button>
+      </div>
+      <div id="mobileMenu" class="hidden md:hidden px-4 pb-4">
+        <a href="component/login/login.html" class="block py-2 text-white hover:text-yellow-400">Login</a>
+        <a href="component/reports.html" class="block py-2 text-white hover:text-yellow-400">Reports</a>
+        <a href="component/insurance.html" class="block py-2 text-white hover:text-yellow-400">Insurance</a>
+        <a href="component/emergency.html" class="block py-2 text-white hover:text-yellow-400">Emergency</a>
+      </div>
+    </header>
+
+  <!-- Hero Section: dark bg, light text -->
+  <section class="w-full min-h-[45vh] flex items-center justify-center px-4 md:px-0">
+    <div class="text-center max-w-3xl">
+      <h1 class="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white drop-shadow-lg mb-4">Welcome to <span class="text-blue-400">HealthyBe</span></h1>
+      <p class="text-lg sm:text-xl md:text-2xl text-blue-200 mb-6 font-semibold">Your one-stop solution for managing health, reports, insurance, and emergencies.</p>
+      <a href="#features" class="mt-8 inline-block bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-8 sm:px-10 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">Need Help?</a>
+    </div>
+  </section>
+
+    <!-- Add animated background shapes -->
+    <div class="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+      <div class="absolute top-[-6rem] left-[-6rem] w-[20rem] h-[20rem] bg-gradient-to-br from-blue-500/30 to-green-400/20 rounded-full blur-3xl animate-float"></div>
+      <div class="absolute bottom-[-8rem] right-[-8rem] w-[28rem] h-[28rem] bg-gradient-to-tr from-purple-600/20 to-blue-400/10 rounded-full blur-3xl animate-float-slow"></div>
+    </div>
+
+    <!-- Add animated scroll-down indicator below hero -->
+    <div class="flex justify-center mt-2 animate-bounce">
+      <span class="text-blue-400 text-3xl"><i class="fa-solid fa-angles-down"></i></span>
+    </div>
+
+  <!-- Features Section: dark glassmorphism cards with light text and functional links -->
+  <section id="features" class="container mt-8 md:mt-20 mx-auto px-4 py-8 md:py-12">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-10 items-stretch">
+      <button onclick="window.location.href='component/reports.html'" class="feature-card w-full h-full bg-slate-800/80 rounded-2xl shadow-xl p-8 flex flex-col items-center border border-blue-700/30 hover:scale-105 group focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <i class="fa-solid fa-file-medical text-5xl text-blue-400 mb-4 group-hover:text-blue-300 animate-float"></i>
+                <h3 class="font-bold text-xl mb-2 text-white">Reports</h3>
+                <p class="text-blue-100 text-center">View and manage your medical records and history.</p>
+            </button>
+      <button onclick="window.location.href='component/insurance.html'" class="feature-card w-full h-full bg-slate-800/80 rounded-2xl shadow-xl p-8 flex flex-col items-center border border-green-700/30 hover:scale-105 group focus:outline-none focus:ring-2 focus:ring-green-400">
+                <i class="fa-solid fa-shield-heart text-5xl text-green-400 mb-4 group-hover:text-green-300 animate-float-slow"></i>
+                <h3 class="font-bold text-xl mb-2 text-white">Insurance</h3>
+                <p class="text-blue-100 text-center">Access your insurance details and coverage information.</p>
+            </button>
+      <button onclick="window.location.href='component/emergency.html'" class="feature-card w-full h-full bg-slate-800/80 rounded-2xl shadow-xl p-8 flex flex-col items-center border border-red-700/30 hover:scale-105 group focus:outline-none focus:ring-2 focus:ring-red-400">
+                <i class="fa-solid fa-triangle-exclamation text-5xl text-red-400 mb-4 group-hover:text-red-300 animate-float"></i>
+                <h3 class="font-bold text-xl mb-2 text-white">Emergency</h3>
+                <p class="text-blue-100 text-center">Find emergency contacts, hospitals, and first aid info.</p>
+            </button>
+        </div>
+    </section>
+  <script>
+  // Example: Show a modal or alert for appointments (can be replaced with a real modal)
+  document.getElementById('appointmentsBtn').onclick = function() {
+    alert('No upcoming appointments. Please check back later or contact support to schedule.');
+  };
+  // Mobile nav toggle
+  document.getElementById('navToggle').addEventListener('click', function(){
+    const menu = document.getElementById('mobileMenu');
+    if(menu.classList.contains('hidden')){ menu.classList.remove('hidden'); } else { menu.classList.add('hidden'); }
+  });
+  </script>
+
+    <!-- Health Tips Section with Animation -->
+    <section class="container mx-auto px-4 py-12">
+        <h2 class="text-3xl font-extrabold text-center text-blue-200 mb-8 animate-fade-in">Health Tips</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-gradient-to-br from-green-200 via-green-100 to-blue-100 rounded-2xl p-6 shadow-lg animate-fade-in-up">
+                <h4 class="font-semibold text-green-700 mb-2">Stay Hydrated</h4>
+                <p class="text-gray-700">Drink at least 8 glasses of water daily to keep your body healthy and energized.</p>
+            </div>
+            <div class="bg-gradient-to-br from-blue-200 via-blue-100 to-green-100 rounded-2xl p-6 shadow-lg animate-fade-in-up delay-100">
+                <h4 class="font-semibold text-blue-700 mb-2">Regular Exercise</h4>
+                <p class="text-gray-700">Engage in at least 30 minutes of physical activity every day for a healthy heart.</p>
+            </div>
+            <div class="bg-gradient-to-br from-yellow-200 via-yellow-100 to-green-100 rounded-2xl p-6 shadow-lg animate-fade-in-up delay-200">
+                <h4 class="font-semibold text-yellow-700 mb-2">Balanced Diet</h4>
+                <p class="text-gray-700">Eat a variety of foods, including fruits, vegetables, and whole grains for optimal health.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact & Support Section with improved layout -->
+    <section class="container mx-auto px-4 py-12">
+      <div class="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 rounded-2xl shadow-2xl p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-6 items-center border border-blue-400/20 backdrop-blur-lg animate-fade-in-up contact-card">
+        <div class="flex items-start gap-4">
+          <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fa-solid fa-headset"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">Need Help?</h2>
+            <p class="text-blue-100 mb-4">Our support team is here for you 24/7. Reach out for any queries or emergencies — or chat with a doctor instantly.</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <a href="tel:112" class="text-center inline-block bg-gradient-to-r from-blue-500 to-green-400 hover:from-green-400 hover:to-blue-500 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-all duration-200">Contact Support</a>
+              <a href="component/aihelp.html" class="inline-flex items-center gap-2 justify-center bg-gradient-to-r from-green-400 to-blue-500 hover:from-blue-500 hover:to-green-400 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-all duration-200"><i class="fa-solid fa-user-md"></i> Chat Now</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center">
+          <div class="bg-slate-800/50 rounded-xl p-6 shadow-inner w-full text-center">
+            <h3 class="text-lg md:text-xl font-semibold text-white mb-2">Quick Actions</h3>
+            <p class="text-blue-200 mb-4">View reports, insurance details quickly from here.</p>
+            <div class="flex flex-wrap justify-center gap-3">
+              <a href="component/reports.html" class="px-4 py-2 rounded-md bg-slate-700/60 text-white hover:bg-slate-700/80">Reports</a>
+              <a href="component/insurance.html" class="px-4 py-2 rounded-md bg-slate-700/60 text-white hover:bg-slate-700/80">Insurance</a>
+              <a href="component/emergency.html" class="px-4 py-2 rounded-md bg-red-600/80 text-white hover:bg-red-600">Emergency</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  <!-- Floating AI Chat Button after Navbar -->
+  <div class="fixed md:top-24 md:right-8 right-4 bottom-6 md:bottom-auto z-50">
+    <a href="component/aihelp.html" class="chat-fab group">
+      <button class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-green-400 rounded-full shadow-2xl flex items-center justify-center hover:scale-105 transition-all duration-300 border-4 border-white focus:outline-none focus:ring-4 focus:ring-blue-300">
+        <i class="fa-solid fa-robot text-2xl md:text-3xl text-white"></i>
+      </button>
+      <span class="chat-fab-label hidden md:inline-block group-hover:inline-block ml-2 bg-slate-900/80 text-white text-sm py-1 px-3 rounded-full shadow-lg">Need Help</span>
+    </a>
+  </div>
+
+    
+
+    <!-- Footer -->
+    <footer class="w-full h-auto bg-gradient-to-r from-blue-900 via-slate-800 to-purple-900 text-white py-8 mt-12 border-t border-blue-900/30 shadow-inner">
+      <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4 px-4">
+        <div class="flex items-center gap-2">
+          <img src="image/logo.png" alt="HealthyBe Logo" class="h-8 w-8 rounded-full border border-blue-400">
+          <span class="font-semibold text-lg bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 text-transparent bg-clip-text">HealthyBe</span>
+        </div>
+        <div class="text-center text-blue-200">
+          <p><i class="fa-regular fa-copyright"></i> 2025 HealthyBe. All rights reserved.</p>
+        </div>
+        <div class="flex gap-4">
+          <a href="#" class="hover:text-blue-400"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="hover:text-blue-400"><i class="fab fa-linkedin"></i></a>
+          <a href="#" class="hover:text-blue-400"><i class="fab fa-github"></i></a>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module" src="gemini.js"></script>
+    <style>
+      .animate-gradient {
+        background-size: 200% 200%;
+        animation: gradientMove 8s ease-in-out infinite;
+      }
+      .animate-gradient-x {
+        background-size: 200% 200%;
+        animation: gradientMoveX 6s ease-in-out infinite;
+      }
+      @keyframes gradientMove {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+      @keyframes gradientMoveX {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+      .animate-float {
+        animation: float 6s ease-in-out infinite alternate;
+      }
+      .animate-float-slow {
+        animation: float 12s ease-in-out infinite alternate;
+      }
+      @keyframes float {
+        0% { transform: translateY(0px) scale(1); }
+        100% { transform: translateY(-30px) scale(1.1); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 1.2s ease-in;
+      }
+      .animate-fade-in-up {
+        animation: fadeInUp 1.2s cubic-bezier(.39,.575,.565,1.000);
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      /* Add subtle card hover effect to features */
+      .feature-card:hover {
+        box-shadow: 0 8px 32px 0 rgba(0, 180, 255, 0.25), 0 1.5px 6px 0 rgba(0,0,0,0.10);
+        transform: translateY(-6px) scale(1.04);
+        transition: all 0.3s cubic-bezier(.39,.575,.565,1.000);
+      }
+      /* Contact card tweaks */
+      .contact-card { transition: transform .25s ease, box-shadow .25s ease; }
+      .contact-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(2,6,23,0.6); }
+      /* Floating chat button styling */
+      .chat-fab{display:flex;align-items:center;gap:.5rem}
+      .chat-fab-label{transition:opacity .18s ease, transform .18s ease}
+      @media (max-width: 768px){
+        .chat-fab-label{display:none}
+      }
+    </style>
+</body>
+
+</html>
