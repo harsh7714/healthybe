@@ -1,0 +1,540 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  html.overflow-hidden,
+  body.overflow-hidden {
+    overflow: hidden !important;
+  }
+
+  body {
+    @apply bg-black text-slate-200 antialiased font-sans;
+  }
+}
+
+@layer utilities {
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:shadow-teal-900/20 hover:-translate-y-1;
+  }
+
+  /* Custom Scrollbar for Dark Mode */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-black;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-800 rounded-full hover:bg-slate-700;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;  /* Firefox */
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Light Mode — Comprehensive CSS Overrides
+   Strategy: Target body.light and override ALL dark patterns
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Base page backgrounds ──────────────────────────────── */
+body.light {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Hardcoded hex backgrounds used in pages */
+body.light [class*="bg-\[#0B0F19\]"],
+body.light [class*="bg-\[#080C14\]"],
+body.light [class*="bg-\[#0A0E18\]"] {
+  background-color: #f1f5f9 !important;
+}
+
+/* ── Navbar ──────────────────────────────────────────────── */
+body.light nav {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.08) !important;
+}
+body.light nav h1,
+body.light nav span {
+  color: #0f172a !important;
+}
+body.light nav a {
+  color: #475569 !important;
+}
+body.light nav a:hover {
+  color: #0f172a !important;
+}
+
+/* Mobile top bar & drawer */
+body.light header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+body.light .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+
+/* ── Cards & Surfaces ────────────────────────────────────── */
+body.light .bg-slate-900\/40,
+body.light .bg-slate-900\/30,
+body.light .bg-slate-900\/20,
+body.light .bg-slate-900\/10,
+body.light .bg-slate-950\/40,
+body.light .bg-slate-950\/60,
+body.light .bg-slate-950\/80 {
+  background-color: #ffffff !important;
+}
+
+body.light .bg-slate-900 {
+  background-color: #f8fafc !important;
+}
+
+body.light .bg-slate-950\/75,
+body.light .bg-slate-950\/90 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+body.light .from-slate-950,
+body.light .to-slate-900\/40 {
+  --tw-gradient-from: #ffffff !important;
+  --tw-gradient-to: #f8fafc !important;
+}
+
+body.light .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+}
+body.light .bg-slate-800\/50 {
+  background-color: rgba(226, 232, 240, 0.6) !important;
+}
+body.light .bg-black\/20,
+body.light .bg-black\/30 {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+/* ── Text Colors ─────────────────────────────────────────── */
+body.light .text-slate-100,
+body.light .text-slate-200 {
+  color: #0f172a !important;
+}
+body.light .text-slate-300 {
+  color: #334155 !important;
+}
+body.light .text-slate-400 {
+  color: #475569 !important;
+}
+body.light .text-slate-500 {
+  color: #64748b !important;
+}
+body.light .text-slate-600 {
+  color: #94a3b8 !important;
+}
+/* Keep accent colors vibrant in light mode */
+body.light .text-teal-400 { color: #0d9488 !important; }
+body.light .text-cyan-400  { color: #0891b2 !important; }
+body.light .text-emerald-400 { color: #059669 !important; }
+
+/* ── Borders ─────────────────────────────────────────────── */
+body.light .border-slate-900,
+body.light .border-slate-850,
+body.light .border-slate-800,
+body.light .border-slate-800\/80,
+body.light .border-slate-800\/50,
+body.light .border-slate-700 {
+  border-color: #e2e8f0 !important;
+}
+body.light .border-slate-900\/80 {
+  border-color: #cbd5e1 !important;
+}
+/* Teal borders in light mode stay visible */
+body.light .border-teal-900\/40,
+body.light .border-teal-900\/60 {
+  border-color: rgba(20, 184, 166, 0.35) !important;
+}
+
+/* ── Inputs & Forms ──────────────────────────────────────── */
+body.light input,
+body.light select,
+body.light textarea {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+body.light input::placeholder,
+body.light select::placeholder,
+body.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+body.light input:focus,
+body.light select:focus,
+body.light textarea:focus {
+  border-color: #0d9488 !important;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1) !important;
+}
+body.light option {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* ── Tables ──────────────────────────────────────────────── */
+body.light table {
+  color: #334155 !important;
+}
+body.light thead tr {
+  border-color: #e2e8f0 !important;
+}
+body.light tbody tr {
+  border-color: #f1f5f9 !important;
+}
+body.light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+body.light td, body.light th {
+  color: #334155 !important;
+}
+
+/* ── Dividers ────────────────────────────────────────────── */
+body.light .divide-slate-900\/60 > * + * {
+  border-color: #f1f5f9 !important;
+}
+body.light .border-t {
+  border-color: #e2e8f0 !important;
+}
+body.light .border-b {
+  border-color: #e2e8f0 !important;
+}
+
+/* ── Scrollbar (light) ───────────────────────────────────── */
+body.light ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+body.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+body.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+/* ── Specific component overrides ────────────────────────── */
+
+/* Auth gate page */
+body.light .bg-slate-950\/80 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Gradient backgrounds on highlight rows */
+body.light .from-slate-900\/40,
+body.light .from-slate-900\/30,
+body.light .to-slate-900\/10 {
+  --tw-gradient-from: #f8fafc !important;
+  --tw-gradient-to: #f1f5f9 !important;
+}
+
+/* Teal accent backgrounds */
+body.light .bg-teal-950\/30,
+body.light .bg-teal-950\/10,
+body.light .bg-teal-950\/20,
+body.light .bg-teal-950\/50,
+body.light .bg-teal-950\/60 {
+  background-color: rgba(204, 251, 241, 0.4) !important;
+}
+body.light .bg-teal-950 {
+  background-color: rgba(204, 251, 241, 0.6) !important;
+}
+
+/* Emerald (success) backgrounds */
+body.light .bg-emerald-950\/50 {
+  background-color: rgba(209, 250, 229, 0.5) !important;
+}
+
+/* Rose (danger/alert) backgrounds */
+body.light .bg-rose-500\/5,
+body.light .bg-rose-500\/10 {
+  background-color: rgba(255, 228, 230, 0.5) !important;
+}
+body.light .border-rose-500\/20 {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+/* Slate 900/20-30 card rows */
+body.light .bg-slate-900\/25 {
+  background-color: #f8fafc !important;
+}
+
+/* Gradient dividers */
+body.light .via-slate-800 {
+  --tw-gradient-via: #e2e8f0 !important;
+}
+
+/* Mobile drawer */
+body.light .bg-slate-900\/40 {
+  background-color: #f8fafc !important;
+}
+
+/* Badge overrides for light mode */
+body.light .bg-slate-900\/20 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Monochrome text for headings */
+body.light h1, body.light h2, body.light h3, body.light h4 {
+  color: #0f172a !important;
+}
+body.light p {
+  color: #334155;
+}
+
+/* Home page hero section */
+body.light .bg-\[\#080C14\] {
+  background-color: #f8fafc !important;
+}
+body.light section {
+  color: #0f172a;
+}
+body.light .text-slate-400.text-lg,
+body.light .text-slate-400.text-sm {
+  color: #475569 !important;
+}
+
+/* Feature cards on home page */
+body.light .bg-slate-950\/60 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+body.light .border-slate-800\/50 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Footer */
+body.light footer {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+body.light footer * {
+  color: #64748b !important;
+}
+
+/* Gradient glow blobs — tone down in light */
+body.light .bg-teal-700\/7 {
+  opacity: 0.1 !important;
+}
+
+/* Proper CSS Multi-color Glowing Classes for Emergency View */
+
+/* CPR - Rose Theme */
+.emergency-card-rose.active {
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.1) 0%, rgba(136, 19, 55, 0.25) 100%) !important;
+  border-color: #f43f5e !important;
+  box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.25) !important;
+  color: #fda4af !important;
+}
+.emergency-step-rose {
+  background-color: rgba(244, 63, 94, 0.05) !important;
+  border-color: rgba(244, 63, 94, 0.15) !important;
+}
+.emergency-step-rose:hover {
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+
+/* Heart Attack - Orange Theme */
+.emergency-card-orange.active {
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.1) 0%, rgba(124, 45, 18, 0.25) 100%) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.25) !important;
+  color: #fed7aa !important;
+}
+.emergency-step-orange {
+  background-color: rgba(249, 115, 22, 0.05) !important;
+  border-color: rgba(249, 115, 22, 0.15) !important;
+}
+.emergency-step-orange:hover {
+  border-color: rgba(249, 115, 22, 0.4) !important;
+}
+
+/* Choking - Amber Theme */
+.emergency-card-amber.active {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, rgba(120, 53, 4, 0.25) 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.25) !important;
+  color: #fde68a !important;
+}
+.emergency-step-amber {
+  background-color: rgba(245, 158, 11, 0.05) !important;
+  border-color: rgba(245, 158, 11, 0.15) !important;
+}
+.emergency-step-amber:hover {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Burns - Violet Theme */
+.emergency-card-violet.active {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(76, 29, 149, 0.25) 100%) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.25) !important;
+  color: #ddd6fe !important;
+}
+.emergency-step-violet {
+  background-color: rgba(139, 92, 246, 0.05) !important;
+  border-color: rgba(139, 92, 246, 0.15) !important;
+}
+.emergency-step-violet:hover {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+/* Fracture - Cyan Theme */
+.emergency-card-cyan.active {
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.1) 0%, rgba(21, 94, 117, 0.25) 100%) !important;
+  border-color: #06b6d4 !important;
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.25) !important;
+  color: #cffafe !important;
+}
+.emergency-step-cyan {
+  background-color: rgba(6, 182, 212, 0.05) !important;
+  border-color: rgba(6, 182, 212, 0.15) !important;
+}
+.emergency-step-cyan:hover {
+  border-color: rgba(6, 182, 212, 0.4) !important;
+}
+
+/* Light Mode overrides for Emergency page active states to ensure contrast */
+body.light .emergency-card-rose.active {
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.08) 0%, rgba(244, 63, 94, 0.15) 100%) !important;
+  color: #9f1239 !important;
+  border-color: #f43f5e !important;
+  box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.15) !important;
+}
+body.light .emergency-card-orange.active {
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.15) 100%) !important;
+  color: #c2410c !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.15) !important;
+}
+body.light .emergency-card-amber.active {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.15) 100%) !important;
+  color: #b45309 !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15) !important;
+}
+body.light .emergency-card-violet.active {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.15) 100%) !important;
+  color: #6d28d9 !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.15) !important;
+}
+body.light .emergency-card-cyan.active {
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.08) 0%, rgba(6, 182, 212, 0.15) 100%) !important;
+  color: #0e7490 !important;
+  border-color: #06b6d4 !important;
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.15) !important;
+}
+
+/* Steps overrides for Light Mode */
+body.light .emergency-step-rose {
+  background-color: rgba(244, 63, 94, 0.03) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+body.light .emergency-step-orange {
+  background-color: rgba(249, 115, 22, 0.03) !important;
+  border-color: rgba(249, 115, 22, 0.2) !important;
+}
+body.light .emergency-step-amber {
+  background-color: rgba(245, 158, 11, 0.03) !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+body.light .emergency-step-violet {
+  background-color: rgba(139, 92, 246, 0.03) !important;
+  border-color: rgba(139, 92, 246, 0.2) !important;
+}
+body.light .emergency-step-cyan {
+  background-color: rgba(6, 182, 212, 0.03) !important;
+  border-color: rgba(6, 182, 212, 0.2) !important;
+}
+
+/* Helpline labels & text colors under Light Mode */
+body.light .text-rose-400 { color: #e11d48 !important; }
+body.light .text-orange-400 { color: #ea580c !important; }
+body.light .text-amber-400 { color: #d97706 !important; }
+body.light .text-violet-400 { color: #7c3aed !important; }
+body.light .text-cyan-400 { color: #0891b2 !important; }
+
+/* Escaped selectors for background-gradient helpline cards in Light Mode */
+body.light .from-red-500\/25 {
+  --tw-gradient-from: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+body.light .from-amber-500\/25 {
+  --tw-gradient-from: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+body.light .from-cyan-500\/25 {
+  --tw-gradient-from: rgba(6, 182, 212, 0.12) !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+body.light .from-violet-500\/25 {
+  --tw-gradient-from: rgba(139, 92, 246, 0.12) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Document scanner laser scan animation */
+@keyframes scan-laser {
+  0%, 100% {
+    top: 5%;
+  }
+  50% {
+    top: 95%;
+  }
+}
+
+.animate-scan {
+  animation: scan-laser 2.5s infinite ease-in-out;
+}
+
+/* Fade in fast for tab panel transitions */
+@keyframes fade-in-fast {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-fast {
+  animation: fade-in-fast 0.25s ease-out both;
+}
+
+/* Scale up for modals/cards */
+@keyframes scale-up {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-up {
+  animation: scale-up 0.3s ease-out both;
+}
+
+/* Fade in (used in navbar dropdown) */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out both;
+}
