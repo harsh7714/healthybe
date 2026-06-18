@@ -2,12 +2,21 @@ import React, { useState } from 'react'
 import { useHealth } from '../context/HealthContext'
 import { Card, CardHeader, CardContent } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
-import { useTranslation } from '../utils/i18n'
+import { useTranslation } from '../utils/translationService'
+import { simplifyMetric } from '../utils/healthSimplifier'
 
 /* ─── Dashboard Component ──────────────────────────────────── */
 function Dashboard() {
   const { family, activeProfileId, activeProfile, getDerivedHealthData, isLoggedIn, familyLoading } = useHealth()
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
+  const [openTechDetails, setOpenTechDetails] = useState({})
+
+  const toggleTechDetails = (idx) => {
+    setOpenTechDetails(prev => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }))
+  }
 
   // Layout AuthGuardInline intercepts this; fallback returning null
   if (!isLoggedIn) return null
@@ -271,17 +280,88 @@ function Dashboard() {
               <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">{t('dashboard.aiWarnings')}</h3>
               
               <div className="space-y-4">
-                {metrics.filter(m => m.status.toLowerCase().includes('high') || m.status.toLowerCase().includes('elevated') || m.status.toLowerCase().includes('decrease') || m.status.toLowerCase().includes('insufficiency')).map((m, idx) => (
-                  <div key={idx} className="p-4 bg-rose-500/5 border border-rose-500/20 rounded-2xl space-y-2 shadow-sm">
-                    <div className="flex justify-between items-center">
-                      <Badge variant="critical">{t('common.alert')}</Badge>
-                      <span className="text-[10px] text-slate-500 font-medium font-mono">{m.date}</span>
+                {metrics.filter(m => m.status.toLowerCase().includes('high') || m.status.toLowerCase().includes('elevated') || m.status.toLowerCase().includes('decrease') || m.status.toLowerCase().includes('insufficiency')).map((m, idx) => {
+                  const simplified = simplifyMetric(m.name, m.status, m.value, m.unit, lang)
+                  const isOpen = !!openTechDetails[idx]
+                  
+                  return (
+                    <div key={idx} className="p-4 bg-gradient-to-tr from-slate-950 to-slate-900/40 border border-rose-500/20 hover:border-rose-500/40 rounded-2xl space-y-3 shadow-md hover:scale-[1.01] transition-all duration-300 group">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="critical">{t('common.alert')}</Badge>
+                          <span className="font-extrabold text-slate-300 uppercase tracking-widest font-mono">
+                            {m.memberName}
+                          </span>
+                        </div>
+                        <span className="text-slate-500 font-medium font-mono">{m.date}</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <h4 className="text-xs font-black text-slate-100 group-hover:text-rose-400 transition-colors">
+                          {simplified.simpleName}
+                        </h4>
+                        <p className="text-[11px] text-slate-350 leading-relaxed font-semibold">
+                          {simplified.explanation}
+                        </p>
+                      </div>
+
+                      {simplified.tip && (
+                        <div className="p-3 bg-teal-950/20 border border-teal-900/30 rounded-xl flex gap-2.5 items-start">
+                          <span className="text-teal-400 text-xs select-none mt-0.5">💡</span>
+                          <div className="space-y-0.5">
+                            <span className="text-[8px] font-black text-teal-400 uppercase tracking-widest font-mono block">
+                              {t('dashboard.tip')}
+                            </span>
+                            <p className="text-[11px] text-teal-200 font-medium leading-relaxed">
+                              {simplified.tip}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-1.5 border-t border-slate-900/60">
+                        <button
+                          onClick={() => toggleTechDetails(idx)}
+                          className="flex items-center gap-1.5 text-[9px] font-bold text-slate-455 hover:text-slate-200 transition-colors focus:outline-none"
+                        >
+                          <svg
+                            className={`w-3 h-3 transition-transform duration-300 ${isOpen ? 'rotate-180 text-rose-500' : 'text-slate-500'}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                          {isOpen ? t('dashboard.hideTech') : t('dashboard.showTech')}
+                        </button>
+
+                        {isOpen && (
+                          <div className="mt-3 p-3 bg-black/40 border border-slate-900 rounded-xl space-y-2 text-[9px] font-mono">
+                            <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                              <span className="text-slate-500 uppercase">{t('common.indicator')}</span>
+                              <span className="text-slate-300 font-semibold">{m.name}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                              <span className="text-slate-500 uppercase">{t('dashboard.clinicalVal')}</span>
+                              <span className="text-slate-200 font-black">{m.value} {m.unit}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                              <span className="text-slate-500 uppercase">{t('dashboard.clinicalStatus')}</span>
+                              <span className="text-amber-500 font-bold">{m.status}</span>
+                            </div>
+                            {m.fileName && (
+                              <div className="flex justify-between pt-0.5">
+                                <span className="text-slate-500 uppercase">{t('dashboard.sourceFile')}</span>
+                                <span className="text-slate-450 truncate max-w-[150px]">{m.fileName}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs font-bold text-slate-200 leading-relaxed">
-                      {m.memberName}'s {m.name} is {m.status.toLowerCase()}. Consider medical evaluation.
-                    </p>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {metrics.filter(m => m.status.toLowerCase().includes('high') || m.status.toLowerCase().includes('elevated') || m.status.toLowerCase().includes('decrease') || m.status.toLowerCase().includes('insufficiency')).length === 0 && (
                   <div className="p-5 bg-gradient-to-tr from-slate-950 to-slate-900/10 border border-slate-900 rounded-2xl text-center space-y-2">

@@ -1,9 +1,9 @@
-/* ─── i18n — Lightweight translation helper ───────────────────
+/* ─── translationService — Lightweight translation helper ─────
    Usage:
-     import { useTranslation } from '../utils/i18n'
+     import { useTranslation } from '../utils/translationService'
      const { t } = useTranslation()
      <span>{t('nav.home')}</span>
-──────────────────────────────────────────────────────────────── */
+ ──────────────────────────────────────────────────────────────── */
 
 import { useHealth } from '../context/HealthContext'
 
@@ -47,6 +47,12 @@ const translations = {
     'dashboard.noCheckups': 'No checkups recorded. Vault is clean.',
     'dashboard.medsTitle': 'Cumulative Medication History',
     'dashboard.noMeds': 'No prescriptions mapped in cumulative record.',
+    'dashboard.showTech': 'Show Technical Details',
+    'dashboard.hideTech': 'Hide Technical Details',
+    'dashboard.tip': 'Actionable Tip',
+    'dashboard.sourceFile': 'Source Report',
+    'dashboard.clinicalVal': 'Clinical Value',
+    'dashboard.clinicalStatus': 'Clinical Status',
 
     // Settings
     'settings.title': 'Account Settings',
@@ -145,6 +151,12 @@ const translations = {
     'dashboard.noCheckups': 'कोई जांच दर्ज नहीं।',
     'dashboard.medsTitle': 'संचित दवा इतिहास',
     'dashboard.noMeds': 'कोई नुस्खा दर्ज नहीं।',
+    'dashboard.showTech': 'तकनीकी विवरण दिखाएं',
+    'dashboard.hideTech': 'तकनीकी विवरण छिपाएं',
+    'dashboard.tip': 'महत्वपूर्ण सुझाव',
+    'dashboard.sourceFile': 'स्रोत रिपोर्ट',
+    'dashboard.clinicalVal': 'क्लिनिकल वैल्यू',
+    'dashboard.clinicalStatus': 'नैदानिक स्थिति',
 
     // Settings
     'settings.title': 'खाता सेटिंग',
@@ -238,6 +250,12 @@ const translations = {
     'dashboard.noCheckups': 'Sin chequeos registrados.',
     'dashboard.medsTitle': 'Historial de Medicamentos',
     'dashboard.noMeds': 'Sin recetas en el registro.',
+    'dashboard.showTech': 'Mostrar detalles técnicos',
+    'dashboard.hideTech': 'Ocultar detalles técnicos',
+    'dashboard.tip': 'Consejo práctico',
+    'dashboard.sourceFile': 'Reporte de origen',
+    'dashboard.clinicalVal': 'Valor clínico',
+    'dashboard.clinicalStatus': 'Estado clínico',
     'settings.title': 'Configuración de Cuenta',
     'settings.subtitle': 'Administra los detalles del perfil principal y las cuentas familiares.',
     'settings.logOut': 'Cerrar sesión',
@@ -323,6 +341,12 @@ const translations = {
     'dashboard.noCheckups': 'Aucun bilan enregistré.',
     'dashboard.medsTitle': 'Historique des Médicaments',
     'dashboard.noMeds': 'Aucune ordonnance dans le dossier.',
+    'dashboard.showTech': 'Afficher les détails techniques',
+    'dashboard.hideTech': 'Masquer les détails techniques',
+    'dashboard.tip': 'Conseil pratique',
+    'dashboard.sourceFile': 'Rapport source',
+    'dashboard.clinicalVal': 'Valeur clinique',
+    'dashboard.clinicalStatus': 'Statut clinique',
     'settings.title': 'Paramètres du Compte',
     'settings.subtitle': 'Gérez les détails du profil principal et les comptes familiaux.',
     'settings.logOut': 'Se déconnecter',
@@ -408,6 +432,12 @@ const translations = {
     'dashboard.noCheckups': 'Keine Untersuchungen aufgezeichnet.',
     'dashboard.medsTitle': 'Kumulativer Medikamentenverlauf',
     'dashboard.noMeds': 'Keine Rezepte im kumulativen Datensatz.',
+    'dashboard.showTech': 'Technische Details anzeigen',
+    'dashboard.hideTech': 'Technische Details ausblenden',
+    'dashboard.tip': 'Praktischer Tipp',
+    'dashboard.sourceFile': 'Quellbericht',
+    'dashboard.clinicalVal': 'Klinischer Wert',
+    'dashboard.clinicalStatus': 'Klinischer Status',
     'settings.title': 'Kontoeinstellungen',
     'settings.subtitle': 'Verwalten Sie Hauptprofildetails und verknüpfte Familienkonten.',
     'settings.logOut': 'Abmelden',

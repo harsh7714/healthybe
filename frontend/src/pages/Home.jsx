@@ -9,7 +9,7 @@ const features = [
       </svg>
     ),
     title: 'Health Vault',
-    desc: 'Upload PDFs, images, and prescriptions from your device or phone camera. All reports are stored per family member and can be renamed, viewed, and shared as a profile link.',
+    desc: 'Upload PDFs, images, and prescriptions from your device or phone camera. All reports are stored per family member and can be securely renamed and viewed.',
     color: 'text-teal-400',
     bg: 'bg-teal-950/50',
     border: 'border-teal-900/50',

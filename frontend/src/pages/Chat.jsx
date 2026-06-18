@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useHealth } from '../context/HealthContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { useTranslation } from '../utils/i18n'
+import { useTranslation } from '../utils/translationService'
 
 function Chat() {
   const {

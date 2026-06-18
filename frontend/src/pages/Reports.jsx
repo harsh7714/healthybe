@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useHealth } from '../context/HealthContext'
-import { photoToPdf } from '../utils/photoToPdf'
+import { photoToPdf, photosToMultiPagePdf } from '../utils/photoToPdf'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -15,12 +15,13 @@ function Reports() {
     isUploading,
     uploadError,
     renameReport,
+    deleteReport,
   } = useHealth()
 
   const fileInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+  const capturedPagesRef = useRef([])
 
-  const [profileCopied, setProfileCopied] = useState(false)
   const [viewingReport, setViewingReport] = useState(null)
   const [viewerPageIdx, setViewerPageIdx] = useState(0)
   const [editingFileId, setEditingFileId] = useState(null)
@@ -47,13 +48,6 @@ function Reports() {
     setViewingReport(report)
   }
 
-  const handleShareProfileVault = () => {
-    const link = `https://healthybe.app/s/share_profile_${activeProfileId}`
-    navigator.clipboard.writeText(link)
-    setProfileCopied(true)
-    setTimeout(() => setProfileCopied(false), 2000)
-  }
-
   /* ── File upload via device ──────────────────────────────────── */
   const handleFileUploaded = async (e) => {
     const files = Array.from(e.target.files)
@@ -72,36 +66,61 @@ function Reports() {
     if (!files.length) return
     e.target.value = ''
 
-    for (const file of files) {
-      const defaultName = `Camera_Report_${new Date().toISOString().slice(0, 10)}`
-      let customName = window.prompt("Enter a name for this report:", defaultName)
+    // Add files to current collection
+    capturedPagesRef.current.push(...files)
 
-      // If user cancels the prompt, cancel this upload
-      if (customName === null) continue
+    // Prompt user to add more pages
+    const scanMore = window.confirm(
+      `Captured page ${capturedPagesRef.current.length}.\nWould you like to scan/capture another page for this report?`
+    )
 
-      customName = customName.trim()
-      if (!customName) {
-        customName = defaultName
-      }
-
-      // Ensure extension is .pdf
-      const finalFilename = customName.toLowerCase().endsWith('.pdf') ? customName : `${customName}.pdf`
-
-      let fileToUpload = file
-      if (file.type.startsWith('image/')) {
-        try {
-          fileToUpload = await photoToPdf(file)
-        } catch (err) {
-          console.error("Failed to convert captured photo to PDF:", err)
-        }
-      }
-      const result = await uploadReportToS3(fileToUpload, activeProfileId, finalFilename)
-      if (result.success) showSuccess(`"${finalFilename}" scanned & uploaded successfully.`)
-    }
-
-    const scanMore = window.confirm("Would you like to scan/capture another image for this profile?")
     if (scanMore) {
       cameraInputRef.current?.click()
+      return
+    }
+
+    // Done scanning all pages, compile and name
+    const pagesCount = capturedPagesRef.current.length
+    const defaultName = `Camera_Report_${new Date().toISOString().slice(0, 10)}`
+    let customName = window.prompt(
+      `Compiling ${pagesCount} page(s) into one PDF.\nEnter a name for this report:`,
+      defaultName
+    )
+
+    // If user cancels the prompt, cancel this upload and reset captured pages
+    if (customName === null) {
+      capturedPagesRef.current = []
+      return
+    }
+
+    customName = customName.trim()
+    if (!customName) {
+      customName = defaultName
+    }
+
+    // Ensure extension is .pdf
+    const finalFilename = customName.toLowerCase().endsWith('.pdf') ? customName : `${customName}.pdf`
+
+    try {
+      let fileToUpload
+      if (capturedPagesRef.current.length === 1) {
+        // Single page fast path
+        const singleFile = capturedPagesRef.current[0]
+        fileToUpload = singleFile.type.startsWith('image/') ? await photoToPdf(singleFile) : singleFile
+      } else {
+        // Multi page compiling
+        const pdfBlob = await photosToMultiPagePdf(capturedPagesRef.current)
+        fileToUpload = new File([pdfBlob], finalFilename, { type: 'application/pdf' })
+      }
+
+      const result = await uploadReportToS3(fileToUpload, activeProfileId, finalFilename)
+      if (result.success) {
+        showSuccess(`"${finalFilename}" (${pagesCount} pages) scanned & uploaded successfully.`)
+      }
+    } catch (err) {
+      console.error("Failed to compile multi-page PDF:", err)
+    } finally {
+      capturedPagesRef.current = [] // clear collection
     }
   }
 
@@ -110,6 +129,18 @@ function Reports() {
     if (!editingFileNameVal.trim()) return
     renameReport(id, editingFileNameVal)
     setEditingFileId(null)
+  }
+
+  /* ── Delete ──────────────────────────────────────────────────── */
+  const handleDeleteReport = async (id, name) => {
+    if (window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      try {
+        await deleteReport(id)
+        showSuccess(`"${name}" has been deleted.`)
+      } catch (err) {
+        console.error('Delete failed:', err)
+      }
+    }
   }
 
   /* ── Filtered reports for active profile ────────────────────── */
@@ -126,14 +157,10 @@ function Reports() {
             <div className="bg-slate-950 border border-slate-800 rounded-3xl p-10 space-y-5 text-center max-w-xs mx-4 shadow-2xl">
               <Spinner size="lg" className="mx-auto" />
               <div>
-                <h4 className="font-black text-slate-100 text-base">Uploading to S3…</h4>
+                <h4 className="font-black text-slate-100 text-base">Report is being uploaded and analyzed</h4>
                 <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  Running Gemini AI analysis on your report. This may take a few seconds.
+                  Please wait while your report is uploaded and analyzed. This may take a few seconds.
                 </p>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-xs text-teal-400 font-mono">
-                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-                AI processing…
               </div>
             </div>
           </div>
@@ -238,17 +265,6 @@ function Reports() {
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">Records for {profileName}</p>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleShareProfileVault}
-              className="flex items-center gap-2 rounded-xl"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 10.742l4.685-2.342m0 5.2l-4.685-2.342M19 12a3 3 0 11-6 0 3 3 0 016 0zm-6-9a3 3 0 11-6 0 3 3 0 016 0zm-6 18a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              {profileCopied ? 'Link Copied!' : 'Share Profile Vault'}
-            </Button>
           </div>
 
           {activeReports.length === 0 ? (
@@ -332,16 +348,15 @@ function Reports() {
                       >
                         View
                       </Button>
-                      {report.s3Url && (
-                        <a
-                          href={report.s3Url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-400 hover:text-slate-200 rounded-xl transition-all"
-                        >
-                          Open ↗
-                        </a>
-                      )}
+
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleDeleteReport(report.id, report.name)}
+                        className="text-rose-500 hover:text-rose-400 border border-rose-950/20 hover:border-rose-900/30 rounded-xl py-2 px-3.5 animate-none active:scale-100"
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 )
@@ -363,12 +378,7 @@ function Reports() {
                 <p className="text-[10px] text-slate-500 mt-0.5">{viewingReport.date} · {viewingReport.size}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {viewingReport.s3Url && (
-                  <a href={viewingReport.s3Url} target="_blank" rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-teal-400 rounded-lg transition-colors">
-                    Open in tab ↗
-                  </a>
-                )}
+
                 <button
                   onClick={() => setViewingReport(null)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"

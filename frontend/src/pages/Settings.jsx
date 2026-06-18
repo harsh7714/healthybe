@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
 import { Card, CardHeader } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
-import { useTranslation } from '../utils/i18n'
+import { useTranslation } from '../utils/translationService'
 
 function Settings() {
+  const navigate = useNavigate()
   const { 
     family, 
     activeProfileId, 
@@ -17,11 +19,21 @@ function Settings() {
     updatePreference,
     updateProfileImage,
     updateProfileDetails,
-    userEmail
+    userEmail,
+    sendDeleteOtp,
+    confirmDeleteAccount
   } = useHealth()
 
   const { t } = useTranslation()
   const primaryAdmin = family.find(f => f.id === 'self') || family[0] || {}
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteOtpCode, setDeleteOtpCode] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteSuccess, setDeleteSuccess] = useState('')
+  const [isSendingDeleteOtp, setIsSendingDeleteOtp] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
 
   const [newName, setNewName] = useState('')
   const [newRelation, setNewRelation] = useState('Spouse')
@@ -346,6 +358,29 @@ function Settings() {
               </div>
             </Card>
 
+            {/* Danger Zone */}
+            <Card className="p-5 space-y-5 bg-slate-950/40 border border-rose-950/40">
+              <h3 className="font-bold text-sm text-rose-500 uppercase tracking-wider font-mono pb-2 border-b border-rose-950/40">Danger Zone</h3>
+              <div className="space-y-3">
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Permanently delete your account and all associated health records, profiles, and uploaded files. This action is irreversible.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteModalOpen(true)
+                    setOtpSent(false)
+                    setDeleteOtpCode('')
+                    setDeleteError('')
+                    setDeleteSuccess('')
+                  }}
+                  className="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-750 hover:to-red-850 text-red-100 font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-red-950/40 border border-red-700/30"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </Card>
+
           </div>
 
         </div>
@@ -428,6 +463,198 @@ function Settings() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Verification Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-slate-950 border border-rose-900/50 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fade-in space-y-5 text-left">
+            <div className="flex justify-between items-center pb-2 border-b border-rose-950/40">
+              <h3 className="font-extrabold text-sm text-rose-500 uppercase tracking-wider font-mono">
+                Delete Account
+              </h3>
+              <button 
+                type="button"
+                onClick={() => {
+                  if (!isDeletingAccount) {
+                    setDeleteModalOpen(false)
+                  }
+                }}
+                className="text-slate-500 hover:text-slate-350 font-extrabold text-xs transition-colors"
+                disabled={isDeletingAccount}
+              >
+                ✕
+              </button>
+            </div>
+
+            {deleteError && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-medium leading-relaxed">
+                {deleteError}
+              </div>
+            )}
+
+            {deleteSuccess && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-medium leading-relaxed">
+                {deleteSuccess}
+              </div>
+            )}
+
+            {!otpSent ? (
+              <div className="space-y-5">
+                <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10 space-y-2">
+                  <p className="text-xs text-rose-400 font-semibold uppercase tracking-wider font-mono">⚠️ Permanent Destruction Warning</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    You are about to permanently delete the account for <span className="font-mono text-rose-300 font-bold">{userEmail}</span>.
+                  </p>
+                  <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-1 pt-1">
+                    <li>All family profiles and initials will be cleared.</li>
+                    <li>All health records, lab markers, and prescriptions will be purged.</li>
+                    <li>All uploaded PDFs and photos will be deleted from cloud storage.</li>
+                    <li>This action cannot be undone.</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!userEmail) return
+                      setIsSendingDeleteOtp(true)
+                      setDeleteError('')
+                      try {
+                        await sendDeleteOtp(userEmail)
+                        setOtpSent(true)
+                      } catch (err) {
+                        setDeleteError(err.message || 'Failed to send verification code. Please try again.')
+                      } finally {
+                        setIsSendingDeleteOtp(false)
+                      }
+                    }}
+                    disabled={isSendingDeleteOtp}
+                    className="flex-1 bg-gradient-to-r from-red-650 to-red-750 hover:from-red-600 hover:to-red-700 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-red-950/25 flex items-center justify-center gap-2"
+                  >
+                    {isSendingDeleteOtp ? (
+                      <>
+                        <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Sending code...
+                      </>
+                    ) : (
+                      'Request Deletion OTP'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModalOpen(false)}
+                    disabled={isSendingDeleteOtp}
+                    className="flex-1 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    A 6-digit verification code has been sent to <span className="font-mono text-emerald-300 font-bold">{userEmail}</span>. The code will expire in 5 minutes.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="delete-otp-input" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                    Enter Deletion OTP
+                  </label>
+                  <input 
+                    id="delete-otp-input"
+                    type="text" 
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                    value={deleteOtpCode}
+                    onChange={(e) => {
+                      setDeleteOtpCode(e.target.value.replace(/\D/g, ''))
+                    }}
+                    className="w-full bg-slate-900 border border-slate-800 text-sm font-mono text-center tracking-widest px-3 py-3 rounded-xl text-slate-100 focus:outline-none focus:border-red-500/30"
+                    disabled={isDeletingAccount}
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (deleteOtpCode.trim().length !== 6 || isDeletingAccount) return
+                      setIsDeletingAccount(true)
+                      setDeleteError('')
+                      setDeleteSuccess('')
+                      try {
+                        const res = await confirmDeleteAccount(userEmail, deleteOtpCode)
+                        setDeleteSuccess(res.message || 'Account successfully deleted. Logging out...')
+                        // Wait 2.5 seconds to show success before logging out and redirecting
+                        setTimeout(() => {
+                          logoutUser()
+                          setDeleteModalOpen(false)
+                          navigate('/')
+                        }, 2500)
+                      } catch (err) {
+                        setDeleteError(err.message || 'Failed to verify OTP. Please try again.')
+                        setIsDeletingAccount(false)
+                      }
+                    }}
+                    disabled={deleteOtpCode.trim().length !== 6 || isDeletingAccount}
+                    className="flex-1 order-last sm:order-first bg-gradient-to-r from-red-650 to-red-755 hover:from-red-600 hover:to-red-700 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:active:scale-100 active:scale-[0.98] shadow-md shadow-red-950/25 flex items-center justify-center gap-2"
+                  >
+                    {isDeletingAccount ? (
+                      <>
+                        <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Deleting data...
+                      </>
+                    ) : (
+                      'Confirm Permanent Deletion'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModalOpen(false)}
+                    disabled={isDeletingAccount}
+                    className="flex-1 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (isDeletingAccount || isSendingDeleteOtp) return
+                      setIsSendingDeleteOtp(true)
+                      setDeleteError('')
+                      setDeleteSuccess('')
+                      try {
+                        await sendDeleteOtp(userEmail)
+                        setDeleteSuccess('A new OTP verification code has been sent.')
+                      } catch (err) {
+                        setDeleteError(err.message || 'Failed to resend code.')
+                      } finally {
+                        setIsSendingDeleteOtp(false)
+                      }
+                    }}
+                    disabled={isDeletingAccount || isSendingDeleteOtp}
+                    className="text-[11px] text-teal-400 hover:text-teal-300 hover:underline font-semibold font-mono"
+                  >
+                    Resend Code
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

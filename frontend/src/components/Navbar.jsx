@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
-import { photoToPdf } from '../utils/photoToPdf'
-import { useTranslation } from '../utils/i18n'
+import { photoToPdf, photosToMultiPagePdf } from '../utils/photoToPdf'
+import { useTranslation } from '../utils/translationService'
 
 function Navbar() {
   const { 
@@ -17,6 +17,7 @@ function Navbar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const cameraInputRef = useRef(null)
+  const capturedPagesRef = useRef([])
 
   const [isLight, setIsLight] = useState(() => {
     return localStorage.getItem('theme') === 'light'
@@ -53,37 +54,59 @@ function Navbar() {
     if (files.length === 0) return
     e.target.value = ''
 
-    for (const file of files) {
-      const defaultName = `Camera_Report_${new Date().toISOString().slice(0, 10)}`
-      let customName = window.prompt("Enter a name for this report:", defaultName)
+    // Add files to current collection
+    capturedPagesRef.current.push(...files)
 
-      // If user cancels the prompt, cancel this upload
-      if (customName === null) continue
+    // Prompt user to add more pages
+    const scanMore = window.confirm(
+      `Captured page ${capturedPagesRef.current.length}.\nWould you like to scan/capture another page for this report?`
+    )
 
-      customName = customName.trim()
-      if (!customName) {
-        customName = defaultName
-      }
-
-      // Ensure extension is .pdf
-      const finalFilename = customName.toLowerCase().endsWith('.pdf') ? customName : `${customName}.pdf`
-
-      let fileToUpload = file
-      if (file.type.startsWith('image/')) {
-        try {
-          fileToUpload = await photoToPdf(file)
-        } catch (err) {
-          console.error("Failed to convert captured photo to PDF:", err)
-        }
-      }
-      await uploadReportToS3(fileToUpload, activeProfileId, finalFilename)
-    }
-
-    const scanMore = window.confirm("Would you like to scan/capture another image for this profile?")
     if (scanMore) {
       cameraInputRef.current?.click()
-    } else {
+      return
+    }
+
+    // Done scanning all pages, compile and name
+    const pagesCount = capturedPagesRef.current.length
+    const defaultName = `Camera_Report_${new Date().toISOString().slice(0, 10)}`
+    let customName = window.prompt(
+      `Compiling ${pagesCount} page(s) into one PDF.\nEnter a name for this report:`,
+      defaultName
+    )
+
+    // If user cancels the prompt, cancel this upload and reset captured pages
+    if (customName === null) {
+      capturedPagesRef.current = []
+      return
+    }
+
+    customName = customName.trim()
+    if (!customName) {
+      customName = defaultName
+    }
+
+    // Ensure extension is .pdf
+    const finalFilename = customName.toLowerCase().endsWith('.pdf') ? customName : `${customName}.pdf`
+
+    try {
+      let fileToUpload
+      if (capturedPagesRef.current.length === 1) {
+        // Single page fast path
+        const singleFile = capturedPagesRef.current[0]
+        fileToUpload = singleFile.type.startsWith('image/') ? await photoToPdf(singleFile) : singleFile
+      } else {
+        // Multi page compiling
+        const pdfBlob = await photosToMultiPagePdf(capturedPagesRef.current)
+        fileToUpload = new File([pdfBlob], finalFilename, { type: 'application/pdf' })
+      }
+
+      await uploadReportToS3(fileToUpload, activeProfileId, finalFilename)
       navigate('/reports')
+    } catch (err) {
+      console.error("Failed to compile multi-page PDF:", err)
+    } finally {
+      capturedPagesRef.current = [] // clear collection
     }
   }
 

@@ -88,7 +88,7 @@ export default function Footer() {
             © {new Date().getFullYear()} HealthyBe. All rights reserved.
           </p>
           <p className="text-xs text-slate-700 font-mono">
-            v1.0.0 · Built for families
+            v1.1.0 · Built for families
           </p>
         </div>
 
