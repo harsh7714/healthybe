@@ -5,6 +5,7 @@ import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Spinner } from '../components/ui/Spinner'
+import { DocumentScannerModal } from '../components/DocumentScannerModal'
 
 function Reports() {
   const {
@@ -19,8 +20,6 @@ function Reports() {
   } = useHealth()
 
   const fileInputRef = useRef(null)
-  const cameraInputRef = useRef(null)
-  const capturedPagesRef = useRef([])
 
   const [viewingReport, setViewingReport] = useState(null)
   const [viewerPageIdx, setViewerPageIdx] = useState(0)
@@ -28,6 +27,7 @@ function Reports() {
   const [editingFileNameVal, setEditingFileNameVal] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [isMobile, setIsMobile] = useState(false)
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
 
   useEffect(() => {
     const check = () =>
@@ -60,69 +60,7 @@ function Reports() {
     }
   }
 
-  /* ── Camera capture (mobile only) ───────────────────────────── */
-  const handleNativeCameraCapture = async (e) => {
-    const files = Array.from(e.target.files)
-    if (!files.length) return
-    e.target.value = ''
 
-    // Add files to current collection
-    capturedPagesRef.current.push(...files)
-
-    // Prompt user to add more pages
-    const scanMore = window.confirm(
-      `Captured page ${capturedPagesRef.current.length}.\nWould you like to scan/capture another page for this report?`
-    )
-
-    if (scanMore) {
-      cameraInputRef.current?.click()
-      return
-    }
-
-    // Done scanning all pages, compile and name
-    const pagesCount = capturedPagesRef.current.length
-    const defaultName = `Camera_Report_${new Date().toISOString().slice(0, 10)}`
-    let customName = window.prompt(
-      `Compiling ${pagesCount} page(s) into one PDF.\nEnter a name for this report:`,
-      defaultName
-    )
-
-    // If user cancels the prompt, cancel this upload and reset captured pages
-    if (customName === null) {
-      capturedPagesRef.current = []
-      return
-    }
-
-    customName = customName.trim()
-    if (!customName) {
-      customName = defaultName
-    }
-
-    // Ensure extension is .pdf
-    const finalFilename = customName.toLowerCase().endsWith('.pdf') ? customName : `${customName}.pdf`
-
-    try {
-      let fileToUpload
-      if (capturedPagesRef.current.length === 1) {
-        // Single page fast path
-        const singleFile = capturedPagesRef.current[0]
-        fileToUpload = singleFile.type.startsWith('image/') ? await photoToPdf(singleFile) : singleFile
-      } else {
-        // Multi page compiling
-        const pdfBlob = await photosToMultiPagePdf(capturedPagesRef.current)
-        fileToUpload = new File([pdfBlob], finalFilename, { type: 'application/pdf' })
-      }
-
-      const result = await uploadReportToS3(fileToUpload, activeProfileId, finalFilename)
-      if (result.success) {
-        showSuccess(`"${finalFilename}" (${pagesCount} pages) scanned & uploaded successfully.`)
-      }
-    } catch (err) {
-      console.error("Failed to compile multi-page PDF:", err)
-    } finally {
-      capturedPagesRef.current = [] // clear collection
-    }
-  }
 
   /* ── Rename ──────────────────────────────────────────────────── */
   const handleSaveRename = (id) => {
@@ -199,11 +137,9 @@ function Reports() {
             </p>
           </div>
 
-          {/* Hidden inputs */}
+          {/* Hidden input */}
           <input type="file" ref={fileInputRef} onChange={handleFileUploaded}
             accept=".pdf,.png,.jpg,.jpeg" multiple className="hidden" />
-          <input type="file" ref={cameraInputRef} onChange={handleNativeCameraCapture}
-            accept="image/*" capture="environment" className="hidden" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Device file manager */}
@@ -211,7 +147,7 @@ function Reports() {
               type="button"
               disabled={isUploading}
               onClick={() => fileInputRef.current?.click()}
-              className={`p-5 text-left rounded-2xl bg-slate-900/20 border border-slate-900 hover:border-slate-800 hover:bg-slate-900/40 transition-all flex items-start gap-4 group disabled:opacity-50 disabled:cursor-not-allowed ${!isMobile ? 'md:col-span-2' : ''}`}
+              className="p-5 text-left rounded-2xl bg-slate-900/20 border border-slate-900 hover:border-slate-800 hover:bg-slate-900/40 transition-all flex items-start gap-4 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -228,30 +164,28 @@ function Reports() {
               </div>
             </button>
 
-            {/* Camera (mobile only) */}
-            {isMobile && (
-              <button
-                type="button"
-                disabled={isUploading}
-                onClick={() => cameraInputRef.current?.click()}
-                className="p-5 text-left rounded-2xl bg-slate-900/20 border border-slate-900 hover:border-slate-800 hover:bg-slate-900/40 transition-all flex items-start gap-4 group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wide group-hover:text-teal-400 transition-colors">
-                    Scan by Camera
-                  </h4>
-                  <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-                    Snap a photo of a prescription or report using your phone camera.
-                  </p>
-                </div>
-              </button>
-            )}
+            {/* Camera */}
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={() => setIsScannerOpen(true)}
+              className="p-5 text-left rounded-2xl bg-slate-900/20 border border-slate-900 hover:border-slate-800 hover:bg-slate-900/40 transition-all flex items-start gap-4 group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wide group-hover:text-teal-400 transition-colors">
+                  Scan by Camera
+                </h4>
+                <p className="text-[10px] text-slate-500 mt-1 leading-normal">
+                  Snap photos of prescriptions/reports to compile into a clean scanned PDF.
+                </p>
+              </div>
+            </button>
           </div>
         </Card>
 
@@ -465,6 +399,18 @@ function Reports() {
           </div>
         </div>
       )}
+
+      {/* Camera Document Scanner Modal */}
+      <DocumentScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onComplete={async (compiledFile) => {
+          const result = await uploadReportToS3(compiledFile, activeProfileId, compiledFile.name)
+          if (result.success) {
+            showSuccess(`"${compiledFile.name}" scanned & uploaded successfully.`)
+          }
+        }}
+      />
     </div>
   )
 }
