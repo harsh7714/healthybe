@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useHealth } from '../context/HealthContext'
 import { Card, CardHeader, CardContent } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -7,9 +7,10 @@ import { simplifyMetric } from '../utils/healthSimplifier'
 
 /* ─── Dashboard Component ──────────────────────────────────── */
 function Dashboard() {
-  const { family, activeProfileId, activeProfile, getDerivedHealthData, isLoggedIn, familyLoading } = useHealth()
+  const { family, activeProfileId, activeProfile, getDerivedHealthData, isLoggedIn, familyLoading, reports = [], getReportAnalysis } = useHealth()
   const { t, lang } = useTranslation()
   const [openTechDetails, setOpenTechDetails] = useState({})
+  const [selectedReportId, setSelectedReportId] = useState('all')
 
   const toggleTechDetails = (idx) => {
     setOpenTechDetails(prev => ({
@@ -17,6 +18,11 @@ function Dashboard() {
       [idx]: !prev[idx]
     }))
   }
+
+  // Reset report filter when switching family profiles
+  useEffect(() => {
+    setSelectedReportId('all')
+  }, [activeProfileId])
 
   // Layout AuthGuardInline intercepts this; fallback returning null
   if (!isLoggedIn) return null
@@ -37,70 +43,148 @@ function Dashboard() {
   const selectedProfile = activeProfileId
   const activeProfileName = activeProfile?.name || ''
   
+  const activeReports = selectedProfile === 'all'
+    ? reports
+    : reports.filter(r => r.profileId === selectedProfile)
+
   let vitals = {}
   let metrics = []
   let medications = []
   let checkups = []
   let diet = []
 
-  if (selectedProfile !== 'all' && activeProfile?.healthData) {
-    vitals = activeProfile.healthData.vitals || {}
-    metrics = activeProfile.healthData.metrics || []
-    medications = activeProfile.healthData.medications || []
-    checkups = activeProfile.healthData.checkups || []
-    diet = activeProfile.healthData.diet || []
-  } else if (selectedProfile === 'all') {
-    // Combine from all family members' pre-stored healthData in DB
-    family.forEach(member => {
-      if (member.healthData) {
-        if (member.healthData.vitals && Object.keys(member.healthData.vitals).length > 0) {
-          vitals[member.id] = {
-            memberName: member.name,
-            initials: member.initials,
-            profileImageUrl: member.profileImageUrl,
-            stats: member.healthData.vitals
+  if (selectedReportId !== 'all') {
+    const report = activeReports.find(r => r.id === selectedReportId)
+    if (report) {
+      const analysis = report.analysis || (getReportAnalysis && getReportAnalysis(report.name)) || {}
+      const member = family.find(f => f.id === report.profileId)
+
+      // 1. Format Vitals
+      if (selectedProfile === 'all') {
+        if (analysis.vitals && Object.keys(analysis.vitals).length > 0) {
+          vitals[report.profileId] = {
+            memberName: member?.name || 'Unknown',
+            initials: member?.initials || '??',
+            profileImageUrl: member?.profileImageUrl,
+            stats: analysis.vitals
           }
         }
-        if (member.healthData.metrics) {
-          member.healthData.metrics.forEach(m => {
-            metrics.push({
-              ...m,
-              memberName: member.name
-            })
-          })
-        }
-        if (member.healthData.medications) {
-          member.healthData.medications.forEach(m => {
-            medications.push({
-              ...m,
+      } else {
+        vitals = analysis.vitals || {}
+      }
+
+      // 2. Format Lab Metrics
+      if (analysis.metrics) {
+        metrics = analysis.metrics.map(m => ({
+          ...m,
+          memberName: member?.name || 'Unknown',
+          fileName: report.name,
+          date: report.date
+        }))
+      }
+
+      // 3. Format Medications
+      if (analysis.medications) {
+        medications = analysis.medications.map(m => ({
+          ...m,
+          memberName: member?.name || 'Unknown',
+          initials: member?.initials || '??',
+          profileImageUrl: member?.profileImageUrl,
+          source: report.name,
+          date: report.date
+        }))
+      }
+
+      // 4. Format Checkups
+      if (analysis.checkup && analysis.checkup.type) {
+        checkups = [{
+          date: report.date,
+          type: analysis.checkup.type,
+          findings: analysis.checkup.findings || '',
+          memberName: member?.name || 'Unknown',
+          initials: member?.initials || '??',
+          fileName: report.name
+        }]
+      }
+
+      // 5. Format Diet Guidelines
+      if (analysis.diet) {
+        diet = analysis.diet.map(d => ({
+          text: d,
+          memberName: member?.name || 'Unknown',
+          profileId: report.profileId
+        }))
+      }
+    }
+  } else {
+    // Normal accumulated logic
+    if (selectedProfile !== 'all' && activeProfile?.healthData) {
+      vitals = activeProfile.healthData.vitals || {}
+      metrics = activeProfile.healthData.metrics || []
+      medications = activeProfile.healthData.medications || []
+      checkups = activeProfile.healthData.checkups || []
+      diet = activeProfile.healthData.diet || []
+    } else if (selectedProfile === 'all') {
+      // Combine from all family members' pre-stored healthData in DB
+      family.forEach(member => {
+        if (member.healthData) {
+          if (member.healthData.vitals && Object.keys(member.healthData.vitals).length > 0) {
+            vitals[member.id] = {
               memberName: member.name,
               initials: member.initials,
-              profileImageUrl: member.profileImageUrl
+              profileImageUrl: member.profileImageUrl,
+              stats: member.healthData.vitals
+            }
+          }
+          if (member.healthData.metrics) {
+            member.healthData.metrics.forEach(m => {
+              metrics.push({
+                ...m,
+                memberName: member.name
+              })
             })
-          })
-        }
-        if (member.healthData.checkups) {
-          member.healthData.checkups.forEach(c => {
-            checkups.push({
-              ...c,
-              memberName: member.name,
-              initials: member.initials
+          }
+          if (member.healthData.medications) {
+            member.healthData.medications.forEach(m => {
+              medications.push({
+                ...m,
+                memberName: member.name,
+                initials: member.initials,
+                profileImageUrl: member.profileImageUrl
+              })
             })
-          })
-        }
-        if (member.healthData.diet) {
-          member.healthData.diet.forEach(d => {
-            diet.push({
-              ...d,
-              memberName: member.name
+          }
+          if (member.healthData.checkups) {
+            member.healthData.checkups.forEach(c => {
+              checkups.push({
+                ...c,
+                memberName: member.name,
+                initials: member.initials
+              })
             })
-          })
+          }
+          if (member.healthData.diet) {
+            member.healthData.diet.forEach(d => {
+              diet.push({
+                ...d,
+                memberName: member.name
+              })
+            })
+          }
         }
-      }
-    })
+      })
 
-    // If no family member has healthData in DB, fallback to frontend dynamic calculation
-    if (Object.keys(vitals).length === 0 && metrics.length === 0 && medications.length === 0 && checkups.length === 0 && diet.length === 0) {
+      // If no family member has healthData in DB, fallback to frontend dynamic calculation
+      if (Object.keys(vitals).length === 0 && metrics.length === 0 && medications.length === 0 && checkups.length === 0 && diet.length === 0) {
+        const derived = getDerivedHealthData(selectedProfile)
+        vitals = derived.vitals
+        metrics = derived.metrics
+        medications = derived.medications
+        checkups = derived.checkups
+        diet = derived.diet
+      }
+    } else {
+      // Fallback to frontend dynamic calculation
       const derived = getDerivedHealthData(selectedProfile)
       vitals = derived.vitals
       metrics = derived.metrics
@@ -108,40 +192,48 @@ function Dashboard() {
       checkups = derived.checkups
       diet = derived.diet
     }
-  } else {
-    // Fallback to frontend dynamic calculation
-    const derived = getDerivedHealthData(selectedProfile)
-    vitals = derived.vitals
-    metrics = derived.metrics
-    medications = derived.medications
-    checkups = derived.checkups
-    diet = derived.diet
   }
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-32 pb-20 px-6 sm:px-12 lg:px-24">
+    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Active Profile Info Header Block */}
-        <Card className="p-6 bg-gradient-to-tr from-slate-950 to-slate-900/40 border border-slate-900/80 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+
+        {/* ── Dashboard Filter & Header ────────────────────────── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between items-center gap-4 pb-4 border-b border-slate-900/60 text-center md:text-left">
           <div>
-            <h2 className="text-xl font-black text-slate-100 uppercase tracking-tight">{t('dashboard.title')}</h2>
-            <p className="text-xs text-slate-500 mt-1">{t('dashboard.subtitle')}</p>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-100 font-mono tracking-tight uppercase">
+              {selectedProfile === 'all' ? 'Family Health Dashboard' : `${activeProfileName}'s Health Dashboard`}
+            </h1>
+            <p className="text-xs text-slate-500 mt-1 max-w-xl mx-auto md:mx-0">
+              {selectedProfile === 'all' 
+                ? 'Consolidated health records and AI diagnostics for all family members.'
+                : `AI-extracted clinical metrics, prescriptions, and guidelines for ${activeProfileName}.`}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">{t('dashboard.patientLabel')}</span>
-            <div className="px-4 py-2 bg-slate-900/80 border border-slate-800 text-xs text-teal-400 font-extrabold rounded-xl flex items-center gap-2 select-none shadow-inner">
-              <span className="w-5 h-5 rounded-full bg-slate-800 text-[9px] flex items-center justify-center font-extrabold font-sans text-teal-400 border border-slate-750 overflow-hidden">
-                {activeProfile?.profileImageUrl ? (
-                  <img src={activeProfile?.profileImageUrl} alt={activeProfile?.name || ''} className="w-full h-full object-cover" />
-                ) : (
-                  activeProfile?.initials || ''
-                )}
-              </span>
-              {activeProfileName.toUpperCase()} ({activeProfile?.relation?.toUpperCase() || ''})
+
+          {activeReports.length > 0 && (
+            <div className="flex items-center justify-center gap-2 bg-slate-950/20 border border-slate-900 rounded-2xl px-4 py-2 w-fit mx-auto md:mx-0 shrink-0">
+              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-extrabold whitespace-nowrap">Report Filter:</span>
+              <select
+                value={selectedReportId}
+                onChange={(e) => setSelectedReportId(e.target.value)}
+                className="bg-transparent text-teal-400 font-bold text-xs focus:outline-none cursor-pointer max-w-[180px] sm:max-w-[220px] truncate ml-1.5"
+              >
+                <option value="all" className="bg-slate-950 text-slate-300">All Reports (Cumulative)</option>
+                {activeReports.map((report) => {
+                  const truncatedName = report.name.length > 20
+                    ? report.name.slice(0, 18) + '...'
+                    : report.name
+                  return (
+                    <option key={report.id} value={report.id} className="bg-slate-950 text-slate-350">
+                      {truncatedName} ({report.date})
+                    </option>
+                  )
+                })}
+              </select>
             </div>
-          </div>
-        </Card>
+          )}
+        </div>
 
         {/* Top Section: Vitals & Lab Telemetry */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -202,11 +294,11 @@ function Dashboard() {
                       <p className="text-xs text-slate-500 italic">{t('dashboard.noVitals')}</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
                       {Object.entries(vitals).map(([name, stat], idx) => (
                         <div 
                           key={idx} 
-                          className="p-5 rounded-2xl bg-slate-900/30 border border-slate-850 hover:border-slate-800/80 transition-all duration-300 shadow-md group hover:-translate-y-0.5"
+                          className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/30 border border-slate-850 hover:border-slate-800/80 transition-all duration-300 shadow-md group hover:-translate-y-0.5"
                         >
                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{name}</p>
                           <div className="flex items-baseline gap-1.5 mt-2.5">

@@ -270,13 +270,42 @@ body.light .bg-emerald-950\/50 {
   background-color: rgba(209, 250, 229, 0.5) !important;
 }
 
-/* Rose (danger/alert) backgrounds */
+/* Rose (danger/alert) overrides for light mode */
+body.light .text-rose-500 { color: #e11d48 !important; } /* Rose-600 */
+body.light .text-rose-450 { color: #be123c !important; } /* Rose-700 */
+body.light .text-rose-400 { color: #be123c !important; } /* Rose-700 */
+body.light .text-rose-300 { color: #9f1239 !important; } /* Rose-800 */
+
 body.light .bg-rose-500\/5,
 body.light .bg-rose-500\/10 {
-  background-color: rgba(255, 228, 230, 0.5) !important;
+  background-color: rgba(254, 242, 242, 0.65) !important; /* Soft rose bg */
 }
+body.light .border-rose-500\/10,
 body.light .border-rose-500\/20 {
-  border-color: rgba(244, 63, 94, 0.3) !important;
+  border-color: rgba(244, 63, 94, 0.25) !important;
+}
+body.light .border-rose-950\/40,
+body.light .border-rose-900\/50,
+body.light .border-rose-900\/60 {
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+/* Emerald (success/OTP info) overrides for light mode */
+body.light .text-emerald-300 { color: #065f46 !important; } /* Emerald-800 */
+body.light .bg-emerald-500\/5 {
+  background-color: rgba(209, 250, 229, 0.3) !important;
+}
+body.light .border-emerald-500\/10 {
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+body.light .bg-emerald-500\/50 {
+  background-color: rgba(209, 250, 229, 0.5) !important;
+}
+
+/* Gray button hover overrides for light mode */
+body.light .hover\:bg-slate-850:hover,
+body.light .hover\:bg-slate-900:hover {
+  background-color: #cbd5e1 !important;
 }
 
 /* Slate 900/20-30 card rows */

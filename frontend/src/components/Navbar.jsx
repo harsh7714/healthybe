@@ -23,7 +23,6 @@ function Navbar() {
     return localStorage.getItem('theme') === 'light'
   })
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   // Sync theme
   useEffect(() => {
@@ -278,16 +277,6 @@ function Navbar() {
 
       {/* 2. MOBILE TOP BAR */}
       <header className="flex md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/80 px-4 items-center justify-between z-50 shadow-md">
-        <button 
-          onClick={() => setIsDrawerOpen(true)}
-          aria-label="Open navigation drawer"
-          className="p-2 rounded-xl text-slate-400 hover:text-slate-200 active:bg-slate-900/50 transition-colors focus:outline-none"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
         <NavLink to="/" className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full border border-slate-800/80 flex items-center justify-center bg-slate-950 overflow-hidden">
             <img src="/favicon.ico" alt="HealthyBe Logo" className="w-full h-full object-cover" />
@@ -312,144 +301,9 @@ function Navbar() {
         </button>
       </header>
 
-      {/* 3. MOBILE SLIDING DRAWER BACKDROP */}
-      {isDrawerOpen && (
-        <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] md:hidden animate-fade-in"
-          onClick={() => setIsDrawerOpen(false)}
-        ></div>
-      )}
-
-      {/* 4. MOBILE SLIDING DRAWER (ANDROID STYLE) */}
-      <div className={`fixed top-0 bottom-0 left-0 w-80 bg-slate-950 border-r border-slate-900 z-[70] md:hidden flex flex-col transition-transform duration-300 ease-in-out ${
-        isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        {/* Drawer Header */}
-        <div className="p-6 bg-slate-900/40 border-b border-slate-900 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isLoggedIn ? (
-                <>
-                  <div className="w-10 h-10 rounded-full bg-teal-950 border border-teal-900 text-teal-400 font-black flex items-center justify-center text-sm shadow-md overflow-hidden">
-                    {activeProfile?.profileImageUrl ? (
-                      <img src={activeProfile?.profileImageUrl} alt={activeProfile?.name || ''} className="w-full h-full object-cover" />
-                    ) : (
-                      activeProfile?.initials || ''
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-sm text-slate-200">{activeProfile?.name || ''}</h4>
-                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">{activeProfile?.email || ''}</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-sm shadow-md">
-                    👤
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-sm text-slate-200">Guest Account</h4>
-                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Please sign in to access records</p>
-                  </div>
-                </>
-              )}
-            </div>
-            <button 
-              onClick={() => setIsDrawerOpen(false)}
-              aria-label="Close drawer"
-              className="p-1.5 rounded-full text-slate-500 hover:text-slate-300 active:bg-slate-900 transition-colors focus:outline-none"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Profile Switcher */}
-          {isLoggedIn && (
-            <div className="space-y-1">
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block font-mono">{t('nav.selectProfile')}</span>
-              <div className="grid grid-cols-3 gap-1.5 pt-1">
-                {family.map(member => (
-                  <button
-                    key={member.id}
-                    onClick={() => {
-                      setActiveProfileId(member.id)
-                      setIsDrawerOpen(false)
-                    }}
-                    className={`py-2 rounded-lg border text-[10px] font-extrabold text-center transition-all truncate px-1 ${
-                      member.id === activeProfileId 
-                        ? 'bg-teal-950/30 border-teal-900/50 text-teal-400 shadow-inner' 
-                        : 'bg-slate-900/20 border-slate-900 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {member.profileImageUrl ? (
-                      <img src={member.profileImageUrl} alt={member.name} className="w-4 h-4 rounded-full object-cover inline-block" />
-                    ) : (
-                      member.initials
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Drawer Body NavLinks */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1.5">
-          {drawerLinks.map((link) => (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              onClick={() => setIsDrawerOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-xs font-bold tracking-wide transition-all ${
-                  isActive
-                    ? 'text-teal-400 bg-teal-950/20 border-l-4 border-teal-400 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-                }`
-              }
-            >
-              <span className="text-base leading-none">{link.icon}</span>
-              <span>{link.label}</span>
-            </NavLink>
-          ))}
-          {!isLoggedIn && (
-            <NavLink
-              to="/dashboard"
-              onClick={() => setIsDrawerOpen(false)}
-              className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-xs font-bold tracking-wide text-teal-400 hover:bg-teal-950/20 transition-all border border-teal-900/30 mt-4"
-            >
-              <span className="text-base leading-none">🔑</span>
-              <span>{t('nav.signIn')} / Register</span>
-            </NavLink>
-          )}
-        </div>
-
-        {/* Drawer Footer */}
-        <div className="p-4 border-t border-slate-900 text-center">
-          <p className="text-[9px] font-mono text-slate-600">HealthyBe v1.0.0 Android-Drawer</p>
-        </div>
-      </div>
-
-      {/* 5. MOBILE BOTTOM NAVIGATION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-950/90 backdrop-blur-lg border-t border-slate-900/80 flex items-center justify-around px-2 pb-safe z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] md:hidden">
+      {/* 3. MOBILE BOTTOM NAVIGATION BAR */}
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-950/90 backdrop-blur-lg border-t border-slate-900/80 flex items-center justify-between px-6 pb-safe z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] md:hidden">
         
-        {/* Tab 1: Home */}
-        <NavLink
-          to="/"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-12 h-12 transition-all ${
-              isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
-            }`
-          }
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          <span className="text-[9px] font-bold mt-0.5">{t('nav.home')}</span>
-        </NavLink>
-
         {/* Tab 2: Dashboard */}
         <NavLink
           to="/dashboard"
@@ -459,40 +313,40 @@ function Navbar() {
             }`
           }
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          <span className="text-[9px] font-bold mt-0.5">{t('nav.dashboard')}</span>
+          <span className="text-[8px] font-bold mt-0.5">{t('nav.dashboard')}</span>
         </NavLink>
 
-        {/* Center: Camera FAB */}
-        <div className="relative -top-4">
-          <button
-            onClick={handleCameraClick}
-            aria-label="Scan Document"
-            className="w-14 h-14 bg-gradient-to-tr from-teal-500 to-cyan-500 text-slate-950 hover:from-teal-400 hover:to-cyan-400 rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(45,212,191,0.4)] active:scale-95 transition-all border-4 border-slate-950 focus:outline-none"
-          >
-            <svg className="w-6 h-6 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Tab 3: AI Chat */}
+        {/* Tab 3: Emergency */}
         <NavLink
-          to="/chat"
+          to="/emergency"
           className={({ isActive }) =>
             `flex flex-col items-center justify-center w-12 h-12 transition-all ${
               isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
             }`
           }
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <span className="text-[9px] font-bold mt-0.5">{t('nav.chat')}</span>
+          <span className="text-[8px] font-bold mt-0.5">{t('nav.emergency')}</span>
         </NavLink>
+
+        {/* Center: Camera FAB */}
+        <div className="relative -top-3">
+          <button
+            onClick={handleCameraClick}
+            aria-label="Scan Document"
+            className="w-12 h-12 bg-gradient-to-tr from-teal-500 to-cyan-500 text-slate-950 hover:from-teal-400 hover:to-cyan-400 rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(45,212,191,0.3)] active:scale-95 transition-all border-4 border-slate-950 focus:outline-none"
+          >
+            <svg className="w-5 h-5 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
 
         {/* Tab 4: Vault */}
         <NavLink
@@ -503,11 +357,28 @@ function Navbar() {
             }`
           }
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
           </svg>
-          <span className="text-[9px] font-bold mt-0.5">{t('nav.reports')}</span>
+          <span className="text-[8px] font-bold mt-0.5">{t('nav.reports')}</span>
         </NavLink>
+
+        {/* Tab 5: Settings */}
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center w-12 h-12 transition-all ${
+              isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
+            }`
+          }
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="text-[8px] font-bold mt-0.5">{t('nav.settings')}</span>
+        </NavLink>
+
       </div>
     </>
   )

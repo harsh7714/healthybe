@@ -406,14 +406,14 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+        <div className="flex-1 overflow-y-auto md:overflow-hidden flex flex-col md:flex-row min-h-0">
           
           {/* Main Area */}
-          <div className="flex-1 bg-black/40 flex flex-col relative overflow-hidden p-4 justify-center items-center">
+          <div className="flex-1 bg-black/40 flex flex-col relative overflow-y-auto md:overflow-hidden p-4 justify-center items-center min-h-[350px] md:min-h-0">
             
             {/* Step 1: Camera View Finder */}
             {step === 'camera' && (
-              <div className="relative w-full max-w-lg aspect-[3/4] bg-slate-900 border border-slate-850 rounded-2xl overflow-hidden flex flex-col items-center justify-center">
+              <div className="relative w-full max-w-[320px] xs:max-w-lg aspect-[3/4] bg-slate-900 border border-slate-850 rounded-2xl overflow-hidden flex flex-col items-center justify-center">
                 {isCameraStarting ? (
                   <div className="flex flex-col items-center gap-3">
                     <Spinner size="lg" />
@@ -484,7 +484,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                     <div 
                       onMouseDown={(e) => handleCropMouseDown('top', e)}
                       onTouchStart={(e) => handleCropTouchStart('top', e)}
-                      className="absolute top-0 left-0 right-0 h-4 -mt-2 cursor-ns-resize flex items-center justify-center"
+                      className="absolute top-0 left-0 right-0 h-8 -mt-4 cursor-ns-resize flex items-center justify-center"
                     >
                       <div className="w-12 h-1.5 bg-teal-400 rounded-full border border-slate-950" />
                     </div>
@@ -493,7 +493,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                     <div 
                       onMouseDown={(e) => handleCropMouseDown('bottom', e)}
                       onTouchStart={(e) => handleCropTouchStart('bottom', e)}
-                      className="absolute bottom-0 left-0 right-0 h-4 -mb-2 cursor-ns-resize flex items-center justify-center"
+                      className="absolute bottom-0 left-0 right-0 h-8 -mb-4 cursor-ns-resize flex items-center justify-center"
                     >
                       <div className="w-12 h-1.5 bg-teal-400 rounded-full border border-slate-950" />
                     </div>
@@ -502,7 +502,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                     <div 
                       onMouseDown={(e) => handleCropMouseDown('left', e)}
                       onTouchStart={(e) => handleCropTouchStart('left', e)}
-                      className="absolute top-0 bottom-0 left-0 w-4 -ml-2 cursor-ew-resize flex items-center justify-center"
+                      className="absolute top-0 bottom-0 left-0 w-8 -ml-4 cursor-ew-resize flex items-center justify-center"
                     >
                       <div className="h-12 w-1.5 bg-teal-400 rounded-full border border-slate-950" />
                     </div>
@@ -511,7 +511,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                     <div 
                       onMouseDown={(e) => handleCropMouseDown('right', e)}
                       onTouchStart={(e) => handleCropTouchStart('right', e)}
-                      className="absolute top-0 bottom-0 right-0 w-4 -mr-2 cursor-ew-resize flex items-center justify-center"
+                      className="absolute top-0 bottom-0 right-0 w-8 -mr-4 cursor-ew-resize flex items-center justify-center"
                     >
                       <div className="h-12 w-1.5 bg-teal-400 rounded-full border border-slate-950" />
                     </div>

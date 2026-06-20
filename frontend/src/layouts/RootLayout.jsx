@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Outlet, useLocation } from 'react-router-dom'
 import { HealthProvider, useHealth } from '../context/HealthContext'
+import { FloatingChatBubble } from '../components/FloatingChatBubble'
 
 function AuthGuardInline() {
   const { loginUser, sendOtp, verifyOtp, resetPassword } = useHealth()
@@ -157,7 +158,7 @@ function AuthGuardInline() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center pt-32 pb-20 px-6 min-h-[500px]">
+    <div className="flex-1 flex items-center justify-center pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-6 min-h-[500px]">
       <div className="w-full max-w-sm relative">
         {/* Logo & Header */}
         <div className="text-center mb-6">
@@ -496,7 +497,7 @@ function RootLayout() {
   }, [isChatRoute, isLoggedIn])
 
   return (
-    <div className={isChatRoute && isLoggedIn ? 'h-screen overflow-hidden flex flex-col bg-[#0B0F19] no-scrollbar' : 'bg-[#0B0F19] text-slate-100 min-h-screen flex flex-col'}>
+    <div className={isChatRoute && isLoggedIn ? 'h-[100dvh] overflow-hidden flex flex-col bg-[#0B0F19] no-scrollbar' : 'bg-[#0B0F19] text-slate-100 min-h-screen flex flex-col'}>
       <Navbar />
       <div className={isChatRoute && isLoggedIn ? 'flex-1 overflow-hidden flex flex-col no-scrollbar' : 'flex-1 flex flex-col'}>
         {isProtectedRoute && !isLoggedIn ? (
@@ -505,6 +506,7 @@ function RootLayout() {
           <Outlet />
         )}
       </div>
+      {isLoggedIn && !isChatRoute && <FloatingChatBubble />}
       {(!isChatRoute || !isLoggedIn) && <Footer />}
     </div>
   )

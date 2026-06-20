@@ -14,102 +14,117 @@ const router = express.Router()
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 const getUserId = (req) => {
-  return req.headers['x-user-email'] || req.query.userId || req.body.userId || 'self'
+  const email = req.headers['x-user-email'] || req.query.userId || req.body.userId || 'self'
+  return typeof email === 'string' ? email.trim().toLowerCase() : email
 }
 
-const compileProfileHealthData = async (userId, profileId) => {
+const mergeAnalysisIntoProfileHealthData = async (userId, profileId, newAnalysis, reportName, reportDate) => {
   try {
-    const reports = await Report.find({ userId, profileId }).sort({ createdAt: -1 })
-    
-    // 1. Compile Vitals (latest non-empty vitals)
-    let vitals = {}
-    const reportWithVitals = reports.find(r => {
-      const data = r.analysis
-      return data && data.vitals && Object.keys(data.vitals).length > 0
-    })
-    if (reportWithVitals) {
-      vitals = reportWithVitals.analysis.vitals
+    if (!newAnalysis) {
+      console.warn('⚠️ No analysis results to merge for report:', reportName)
+      return
     }
 
-    // 2. Compile Lab Metrics (latest value for each metric name)
-    const latestMetrics = {}
-    reports.forEach(r => {
-      const data = r.analysis
-      if (data && data.metrics) {
-        data.metrics.forEach(m => {
-          if (m && m.name && !latestMetrics[m.name]) {
-            latestMetrics[m.name] = {
+    // 1. Fetch current profile
+    const profile = await Profile.findOne({ userId, id: profileId })
+    if (!profile) {
+      console.warn(`⚠️ Profile not found for merge: userId=${userId}, profileId=${profileId}`)
+      return
+    }
+    console.log(`🔍 Merging analysis results into profile: ${profile.name} (${profileId})`)
+
+    let healthData = profile.healthData || { vitals: {}, metrics: [], medications: [], checkups: [], diet: [] }
+    if (!healthData) healthData = {}
+    if (!healthData.vitals) healthData.vitals = {}
+    if (!healthData.metrics) healthData.metrics = []
+    if (!healthData.medications) healthData.medications = []
+    if (!healthData.checkups) healthData.checkups = []
+    if (!healthData.diet) healthData.diet = []
+
+    // 2. Merge Vitals
+    if (newAnalysis.vitals && Object.keys(newAnalysis.vitals).length > 0) {
+      healthData.vitals = {
+        ...healthData.vitals,
+        ...newAnalysis.vitals
+      }
+    }
+
+    // 3. Merge Lab Metrics
+    if (newAnalysis.metrics) {
+      newAnalysis.metrics.forEach(m => {
+        if (m && m.name) {
+          const idx = healthData.metrics.findIndex(item => item.name.toLowerCase() === m.name.toLowerCase())
+          const metricData = {
+            ...m,
+            date: reportDate,
+            fileName: reportName,
+            memberId: profileId
+          }
+          if (idx !== -1) {
+            healthData.metrics[idx] = metricData
+          } else {
+            healthData.metrics.push(metricData)
+          }
+        }
+      })
+    }
+
+    // 4. Merge Medications
+    if (newAnalysis.medications) {
+      newAnalysis.medications.forEach(m => {
+        if (m && m.name) {
+          const keyMed = m.name.toLowerCase()
+          const exists = healthData.medications.some(item => item.name.toLowerCase() === keyMed)
+          if (!exists) {
+            healthData.medications.push({
               ...m,
-              date: r.date,
-              fileName: r.name,
-              memberId: r.profileId
-            }
-          }
-        })
-      }
-    })
-    const metricsList = Object.values(latestMetrics)
-
-    // 3. Compile Medications List
-    const medications = []
-    const seenMedications = new Set()
-    reports.forEach(r => {
-      const data = r.analysis
-      if (data && data.medications) {
-        data.medications.forEach(m => {
-          if (m && m.name) {
-            const keyMed = m.name.toLowerCase()
-            if (!seenMedications.has(keyMed)) {
-              seenMedications.add(keyMed)
-              medications.push({
+              source: reportName,
+              date: reportDate
+            })
+          } else {
+            const idx = healthData.medications.findIndex(item => item.name.toLowerCase() === keyMed)
+            if (idx !== -1) {
+              healthData.medications[idx] = {
+                ...healthData.medications[idx],
                 ...m,
-                source: r.name,
-                date: r.date
-              })
+                source: reportName,
+                date: reportDate
+              }
             }
           }
-        })
-      }
-    })
+        }
+      })
+    }
 
-    // 4. Compile Checkups List
-    const checkups = []
-    reports.forEach(r => {
-      const data = r.analysis
-      if (data && data.checkup && data.checkup.type) {
-        checkups.push({
-          date: r.date,
-          type: data.checkup.type,
-          findings: data.checkup.findings || '',
-          fileName: r.name
-        })
-      }
-    })
+    // 5. Merge Checkups
+    if (newAnalysis.checkup && newAnalysis.checkup.type) {
+      healthData.checkups.push({
+        date: reportDate,
+        type: newAnalysis.checkup.type,
+        findings: newAnalysis.checkup.findings || '',
+        fileName: reportName
+      })
+    }
 
-    // 5. Compile Diet Guidelines
-    const dietGuidelines = []
-    const seenDiets = new Set()
-    reports.forEach(r => {
-      const data = r.analysis
-      if (data && data.diet) {
-        data.diet.forEach(d => {
-          if (d && !seenDiets.has(d.toLowerCase())) {
-            seenDiets.add(d.toLowerCase())
-            dietGuidelines.push({ text: d, profileId: r.profileId })
+    // 6. Merge Diet Guidelines
+    if (newAnalysis.diet) {
+      newAnalysis.diet.forEach(d => {
+        if (d) {
+          const exists = healthData.diet.some(item => item.text.toLowerCase() === d.toLowerCase())
+          if (!exists) {
+            healthData.diet.push({ text: d, profileId })
           }
-        })
-      }
-    })
+        }
+      })
+    }
 
-    const healthData = { vitals, metrics: metricsList, medications, checkups, diet: dietGuidelines }
-
-    await Profile.findOneAndUpdate(
-      { userId, id: profileId },
-      { healthData },
-      { new: true }
-    )
+    // 7. Save updated profile healthData
+    profile.healthData = healthData
+    profile.markModified('healthData')
+    await profile.save()
+    console.log(`✅ Profile healthData merged for ${userId}/${profileId}`)
   } catch (err) {
-    console.error(`Error compiling profile health data for ${userId}/${profileId}:`, err.message)
+    console.error(`Error merging profile health data:`, err.message)
   }
 }
 
@@ -277,26 +292,10 @@ router.post('/api/upload', upload.single('file'), async (req, res) => {
     const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')
     const fileKey = `healthybe/${profileId}/${timestamp}_${safeName}`
 
-    // 1 — Upload to S3 (or write to local disk fallback)
-    let s3Url = ''
-    if (!process.env.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID.includes('your_')) {
-      const uploadDir = path.join(__dirname, '..', 'uploads')
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true })
-      }
-      const fileNameOnDisk = `${timestamp}_${safeName}`
-      const filePath = path.join(uploadDir, fileNameOnDisk)
-      fs.writeFileSync(filePath, file.buffer)
-      
-      const PORT = process.env.PORT || 3001
-      const reqHost = req.get('host') || `localhost:${PORT}`
-      s3Url = `${req.protocol}://${reqHost}/uploads/${fileNameOnDisk}`
-      console.log(`⚠️ AWS S3 not configured. Saved report '${file.originalname}' locally: ${s3Url}`)
-    } else {
-      await uploadToS3(fileKey, file.buffer, file.mimetype, { profileId, originalName: file.originalname })
-      console.log(`✅ S3 upload: ${fileKey}`)
-      s3Url = await presign(fileKey)
-    }
+    // 1 — Store report file directly in MongoDB as a Base64 data URI (no S3 or disk write)
+    const base64Data = file.buffer.toString('base64')
+    const s3Url = `data:${file.mimetype};base64,${base64Data}`
+    console.log(`💾 Storing report '${file.originalname}' in MongoDB directly as Base64 data URI`)
 
     // 2 — Gemini AI analysis
     let analysis = null
@@ -331,7 +330,7 @@ router.post('/api/upload', upload.single('file'), async (req, res) => {
     console.log(`💾 MongoDB saved: ${doc._id}`)
 
     // 4 — Aggregate and update Profile dashboard info
-    await compileProfileHealthData(userId, profileId)
+    await mergeAnalysisIntoProfileHealthData(userId, profileId, analysis, file.originalname, doc.date)
 
     res.json({
       id:       doc._id,
@@ -371,7 +370,7 @@ router.delete('/api/reports/:id', async (req, res) => {
       } catch (fsErr) {
         console.warn('Local file delete failed (non-fatal):', fsErr.message)
       }
-    } else if (doc.s3Key) {
+    } else if (doc.s3Key && (!doc.s3Url || !doc.s3Url.startsWith('data:'))) {
       try {
         await deleteFromS3(doc.s3Key)
         console.log(`🗑️ S3 deleted: ${doc.s3Key}`)
@@ -380,8 +379,7 @@ router.delete('/api/reports/:id', async (req, res) => {
       }
     }
 
-    // 2 — Re-aggregate and update Profile dashboard info
-    await compileProfileHealthData(userId, doc.profileId)
+    // 2 — No re-aggregation on deletion (keep analyzed metrics persistent on dashboard)
 
     res.json({ ok: true })
   } catch (err) {
@@ -765,7 +763,7 @@ router.post('/api/auth/confirm-delete-account', async (req, res) => {
     // 1. Delete all reports from cloud storage (S3) or local disk uploads
     const userReports = await Report.find({ userId: trimEmail })
     for (const report of userReports) {
-      if (report.s3Key) {
+      if (report.s3Key && (!report.s3Url || !report.s3Url.startsWith('data:'))) {
         try {
           await deleteFromS3(report.s3Key)
           console.log(`🗑️ S3 file deleted: ${report.s3Key}`)

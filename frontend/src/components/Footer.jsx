@@ -13,7 +13,7 @@ const pages = [
 export default function Footer() {
   return (
     <footer className="border-t border-slate-900/80 bg-[#080C14] text-slate-400 mt-auto">
-      <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-24 py-14">
+      <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-24 pt-14 pb-28 sm:py-14">
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pb-10 border-b border-slate-900/60">
 

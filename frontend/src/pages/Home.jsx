@@ -88,7 +88,7 @@ export default function Home() {
     <div className="bg-[#080C14] text-slate-100 min-h-screen">
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-24 px-6 sm:px-12 lg:px-24 overflow-hidden">
+      <section className="relative pt-20 md:pt-32 pb-24 px-4 sm:px-12 lg:px-24 overflow-hidden">
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-teal-700/7 blur-[160px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">

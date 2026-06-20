@@ -86,31 +86,27 @@ function Reports() {
   const profileName = family.find(f => f.id === activeProfileId)?.name || 'Unknown'
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-32 pb-24 px-6 sm:px-12 lg:px-24">
+    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 px-4 sm:px-12 lg:px-24">
       <div className="max-w-5xl mx-auto space-y-8">
 
         {/* ── Upload Loading Overlay ────────────────────────────── */}
         {isUploading && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div className="bg-slate-950 border border-slate-800 rounded-3xl p-10 space-y-5 text-center max-w-xs mx-4 shadow-2xl">
-              <Spinner size="lg" className="mx-auto" />
-              <div>
-                <h4 className="font-black text-slate-100 text-base">Report is being uploaded and analyzed</h4>
-                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  Please wait while your report is uploaded and analyzed. This may take a few seconds.
-                </p>
-              </div>
-            </div>
+          <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center backdrop-blur-md animate-fade-in-fast">
+            <Spinner size="xl">
+              <span className="text-slate-300 font-semibold text-xs sm:text-sm tracking-wider leading-relaxed">
+                Please hold on until we are processing.
+              </span>
+            </Spinner>
           </div>
         )}
 
         {/* ── Success Toast ─────────────────────────────────────── */}
         {successMsg && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 bg-emerald-950 border border-emerald-800 rounded-2xl shadow-2xl animate-fade-in-fast">
+          <div className="fixed top-20 sm:top-24 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 sm:w-auto max-w-md flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 bg-emerald-950/95 border border-emerald-800 rounded-2xl shadow-2xl backdrop-blur-md animate-fade-in-fast">
             <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm font-semibold text-emerald-300">{successMsg}</p>
+            <p className="text-xs sm:text-sm font-semibold text-emerald-300 flex-1 text-left leading-tight break-words">{successMsg}</p>
           </div>
         )}
 
@@ -303,7 +299,7 @@ function Reports() {
       {/* ── Document Viewer Modal ─────────────────────────────────── */}
       {viewingReport && (
         <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-          <div className="max-w-2xl w-full bg-slate-950 border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh]">
+          <div className="max-w-2xl w-full bg-slate-950 border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
 
             {/* Modal header */}
             <div className="bg-slate-900 px-6 py-4 border-b border-slate-900 flex items-center justify-between gap-4">
@@ -325,7 +321,7 @@ function Reports() {
             </div>
 
             {/* Modal body */}
-            <div className="flex-1 bg-black overflow-auto flex items-center justify-center min-h-[300px]">
+            <div className="flex-1 bg-black overflow-auto flex flex-col items-center justify-center min-h-0">
               {/* S3-backed image */}
               {viewingReport.s3Url && viewingReport.type === 'IMAGE' && (
                 <img

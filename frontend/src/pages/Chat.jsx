@@ -306,7 +306,7 @@ function Chat() {
   }
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 h-full flex flex-col justify-start pt-24 md:pt-32 pb-6 px-4 sm:px-8 overflow-hidden relative">
+    <div className="bg-[#0B0F19] text-slate-100 h-full flex flex-col justify-start pt-20 md:pt-32 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6 px-4 sm:px-8 overflow-hidden relative">
 
       {/* Background Ambient Glows */}
       <div className="absolute top-[10%] left-[15%] w-[600px] h-[600px] rounded-full bg-teal-900/10 blur-[130px] pointer-events-none" />
@@ -399,7 +399,7 @@ function Chat() {
         )}
 
         {/* Bottom Input Bar */}
-        <div className="w-full max-w-3xl mx-auto space-y-3 shrink-0 pt-2">
+        <div className="w-full max-w-3xl mx-auto space-y-3 shrink-0 pt-2 relative">
 
           {messages.length > 1 && (
             <div className="flex items-center justify-end">
@@ -418,7 +418,7 @@ function Chat() {
           {showFilePicker && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowFilePicker(false)} />
-              <div className="absolute left-0 bottom-16 w-80 bg-slate-950 border border-slate-900 rounded-2xl p-4 shadow-2xl z-20 animate-fade-in space-y-3">
+              <div className="absolute left-2 xs:left-0 bottom-16 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-slate-950 border border-slate-900 rounded-2xl p-4 shadow-2xl z-20 animate-fade-in space-y-3">
                 <div className="flex justify-between items-center pb-2 border-b border-slate-900">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Vault Clinical Reports</span>
                   <span className="text-[9px] text-teal-400 font-bold font-mono">INDEXED</span>

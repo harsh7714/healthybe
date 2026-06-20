@@ -230,7 +230,7 @@ function Emergency() {
   if (activeColor === 'cyan') panelBorder = "border-cyan-900/40 shadow-lg shadow-cyan-950/5"
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-32 pb-20 px-6 sm:px-12 lg:px-24 relative overflow-hidden">
+    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24 relative overflow-hidden">
       
       {/* Background Color Gradients (Glow Effects) */}
       <div className="absolute top-[-10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-rose-900/10 blur-[130px] pointer-events-none" />
@@ -332,7 +332,7 @@ function Emergency() {
 
         {/* Protocol Instruction Panel */}
         {guides[activeGuide] && (
-          <div className={`bg-slate-950 border ${panelBorder} rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl relative overflow-hidden transition-all duration-500`}>
+          <div className={`bg-slate-950 border ${panelBorder} rounded-3xl p-4 sm:p-6 md:p-8 space-y-6 shadow-2xl relative overflow-hidden transition-all duration-500`}>
             
             {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-900">

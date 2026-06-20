@@ -105,23 +105,10 @@ function Settings() {
   ]
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-32 pb-20 px-6 sm:px-12 lg:px-24">
+    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24">
       <div className="max-w-4xl mx-auto space-y-8">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-900">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-200">{t('settings.title')}</h2>
-            <p className="text-xs text-slate-500 mt-1">{t('settings.subtitle')}</p>
-          </div>
-          
-          <button 
-            type="button"
-            onClick={() => logoutUser()}
-            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-650 text-white font-bold text-[11px] rounded-xl py-1.5 px-3.5 flex items-center justify-center gap-1.5 transition-all duration-300 active:scale-[0.98] shadow-md shadow-red-950/20 self-center md:self-auto"
-          >
-            {t('settings.logOut')}
-          </button>
-        </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           
@@ -358,6 +345,21 @@ function Settings() {
               </div>
             </Card>
 
+            {/* Session Actions */}
+            <Card className="p-5 space-y-4 bg-slate-950/40 border border-slate-900">
+              <h3 className="font-bold text-sm text-slate-200 uppercase tracking-wider font-mono pb-2 border-b border-slate-900">Session</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Log out of your current session on this device. You can sign back in at any time.
+              </p>
+              <button 
+                type="button"
+                onClick={() => logoutUser()}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-650 text-white font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-red-950/20"
+              >
+                {t('settings.logOut')}
+              </button>
+            </Card>
+
             {/* Danger Zone */}
             <Card className="p-5 space-y-5 bg-slate-950/40 border border-rose-950/40">
               <h3 className="font-bold text-sm text-rose-500 uppercase tracking-wider font-mono pb-2 border-b border-rose-950/40">Danger Zone</h3>
@@ -390,7 +392,7 @@ function Settings() {
       {/* Edit Profile Modal */}
       {editingProfile && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in space-y-4 text-left">
+          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in space-y-4 text-left max-h-[calc(100vh-2rem)] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-center pb-2 border-b border-slate-900">
               <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">Edit Profile</h3>
               <button 
@@ -470,7 +472,7 @@ function Settings() {
       {/* Delete Account Verification Modal */}
       {deleteModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-slate-950 border border-rose-900/50 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fade-in space-y-5 text-left">
+          <div className="bg-slate-950 border border-rose-900/50 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fade-in space-y-5 text-left max-h-[calc(100vh-2rem)] overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-center pb-2 border-b border-rose-950/40">
               <h3 className="font-extrabold text-sm text-rose-500 uppercase tracking-wider font-mono">
                 Delete Account
