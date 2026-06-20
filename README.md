@@ -1,6 +1,8 @@
 # HealthyBe - Family Health Management System
 
-A premium, modern family health record and dashboard application. It allows users to manage multiple family profiles, upload medical reports, convert camera-captured images automatically to PDF format, store records securely in AWS S3, query reports via an AI health consultation chat (powered by Google Gemini 1.5 Flash), and access emergency helplines.
+**Version**: `v1.1.0`
+
+A premium, modern family health record and dashboard application. It allows users to manage multiple family profiles, upload medical reports, convert camera-captured images automatically to PDF format, store records securely as Base64 data URIs in MongoDB, query reports via an AI health consultation chat (powered by Google Gemini 1.5 Flash), and access emergency helplines.
 
 ---
 
@@ -54,6 +56,7 @@ The Vite development server will spin up on port `5173`. Open [http://localhost:
 ## 📱 Features
 
 1. **Mobile-Locked Camera to PDF**: When tapping the camera FAB or scan buttons on a mobile device, pictures are converted client-side directly into clean, standardized A4 PDF files using `jsPDF` prior to upload.
-2. **Secure S3 Storage**: All files are stored directly in AWS S3 and served securely using short-lived pre-signed URLs.
-3. **Structured Gemini AI Extraction**: Google Gemini extracts lab metrics, vitals, active medications, checkup summaries, and diet suggestions from uploads, saving them in MongoDB.
+2. **MongoDB Base64 Vault Storage**: All report documents are stored directly inside the MongoDB database as Base64-encoded Data URLs, eliminating AWS S3 dependency.
+3. **Structured Gemini AI Extraction**: Google Gemini extracts lab markers, vitals, active medications, checkup summaries, and diet suggestions from uploads, saving them in MongoDB.
 4. **Global Auth Lockout**: Root-level route guards completely lock the application if logged out.
+5. **Interactive Dashboard Filtering**: Filter extracted clinical vitals and lab metrics dynamically by individual reports or view cumulative family trends.
