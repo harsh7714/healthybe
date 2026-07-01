@@ -327,7 +327,7 @@ function Chat() {
         )}
 
         {/* Message Panel */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-6 no-scrollbar py-4">
+        <div className="flex-1 overflow-y-auto pr-1 space-y-6 no-scrollbar py-2">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex gap-4 items-start w-full ${msg.sender === 'user' ? 'justify-end' : ''}`}>
               {msg.sender === 'ai' && (

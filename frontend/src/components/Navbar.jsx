@@ -40,12 +40,7 @@ function Navbar() {
       navigate('/dashboard')
       return
     }
-    const isRealPhone = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    if (!isRealPhone) {
-      alert("Camera scanning is available only on mobile phones.")
-      return
-    }
-    cameraInputRef.current?.click()
+    navigate('/reports?scan=true')
   }
 
   const handleCameraCapture = async (e) => {

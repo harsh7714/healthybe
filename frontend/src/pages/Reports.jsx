@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
 import { photoToPdf, photosToMultiPagePdf } from '../utils/photoToPdf'
 import { Card } from '../components/ui/Card'
@@ -19,6 +20,7 @@ function Reports() {
     deleteReport,
   } = useHealth()
 
+  const location = useLocation()
   const fileInputRef = useRef(null)
 
   const [viewingReport, setViewingReport] = useState(null)
@@ -36,6 +38,14 @@ function Reports() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('scan') === 'true') {
+      setIsScannerOpen(true)
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [location])
 
   /* ── Helpers ─────────────────────────────────────────────────── */
   const showSuccess = (msg) => {

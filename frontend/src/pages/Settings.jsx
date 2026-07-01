@@ -354,7 +354,7 @@ function Settings() {
               <button 
                 type="button"
                 onClick={() => logoutUser()}
-                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-650 text-white font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-red-950/20"
+                className="w-full bg-gradient-to-r from-red-600 to-red-900 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/20"
               >
                 {t('settings.logOut')}
               </button>
@@ -376,7 +376,7 @@ function Settings() {
                     setDeleteError('')
                     setDeleteSuccess('')
                   }}
-                  className="w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-750 hover:to-red-850 text-red-100 font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-red-950/40 border border-red-700/30"
+                  className="w-full bg-gradient-to-r from-red-600 to-red-900 hover:from-red-500 hover:to-red-600 text-red-100 font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/25 border border-red-700/30"
                 >
                   Delete Account
                 </button>
@@ -535,7 +535,7 @@ function Settings() {
                       }
                     }}
                     disabled={isSendingDeleteOtp}
-                    className="flex-1 bg-gradient-to-r from-red-650 to-red-750 hover:from-red-600 hover:to-red-700 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-red-950/25 flex items-center justify-center gap-2"
+                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/25 flex items-center justify-center gap-2"
                   >
                     {isSendingDeleteOtp ? (
                       <>
@@ -608,7 +608,7 @@ function Settings() {
                       }
                     }}
                     disabled={deleteOtpCode.trim().length !== 6 || isDeletingAccount}
-                    className="flex-1 order-last sm:order-first bg-gradient-to-r from-red-650 to-red-755 hover:from-red-600 hover:to-red-700 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:active:scale-100 active:scale-[0.98] shadow-md shadow-red-950/25 flex items-center justify-center gap-2"
+                    className="flex-1 order-last sm:order-first bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:active:scale-100 active:scale-[0.98] shadow-md shadow-black/25 flex items-center justify-center gap-2"
                   >
                     {isDeletingAccount ? (
                       <>

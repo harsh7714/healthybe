@@ -376,8 +376,8 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in overflow-hidden">
-      <div className="bg-slate-950 border border-slate-900 rounded-3xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
+    <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col overflow-hidden animate-fade-in">
+      <div className="w-full h-screen flex flex-col overflow-hidden relative">
         
         {/* Flash screen overlay */}
         {flashActive && (
@@ -388,7 +388,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
         <div className="px-6 py-4 border-b border-slate-900/60 flex items-center justify-between bg-slate-900/40">
           <div>
             <h3 className="font-extrabold text-sm text-slate-100 flex items-center gap-2">
-              <span className="text-teal-400">📷</span> Adobe-Style PDF Document Maker
+              <span className="text-teal-400">📷</span> Document Scanner
             </h3>
             <p className="text-[10px] text-slate-500 mt-0.5">
               {step === 'camera' && 'Snap pages sequentially. Align document within guides.'}
@@ -423,7 +423,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                   <div className="p-6 text-center space-y-4">
                     <span className="text-4xl text-rose-500">⚠️</span>
                     <p className="text-sm font-semibold text-rose-400">{cameraError}</p>
-                    <Button variant="secondary" size="sm" onClick={initCamera}>Try Again</Button>
+                    <Button variant="scanner-secondary" size="sm" onClick={initCamera}>Try Again</Button>
                   </div>
                 ) : (
                   <>
@@ -436,11 +436,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                     />
                     
                     {/* Document Alignment Frame */}
-                    <div className="absolute inset-0 border-[3px] border-dashed border-teal-500/40 m-8 rounded-xl pointer-events-none flex items-center justify-center">
-                      <div className="text-[9px] bg-slate-950/80 text-teal-400 font-bold tracking-wide uppercase px-3 py-1.5 rounded-lg border border-teal-500/20 backdrop-blur-sm">
-                        Place Document Here
-                      </div>
-                    </div>
+                    
                   </>
                 )}
               </div>
@@ -457,8 +453,8 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                   onMouseUp={handleCropMouseUp}
                   onTouchMove={handleCropTouchMove}
                   onTouchEnd={handleCropMouseUp}
-                  className="relative max-h-[50vh] aspect-[3/4] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 select-none flex items-center justify-center"
-                  style={{ maxHeight: 'calc(80vh - 200px)' }}
+                  className="relative max-h-[60vh] md:max-h-[70vh] aspect-[3/4] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 select-none flex items-center justify-center"
+                  style={{ maxHeight: 'calc(100vh - 240px)' }}
                 >
                   <img 
                     src={pages[activePageIndex].originalUrl} 
@@ -525,7 +521,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                     <span className="text-xs text-slate-400 font-medium">Page {activePageIndex + 1} of {pages.length}</span>
                     <div className="flex gap-2">
                       <Button 
-                        variant="secondary" 
+                        variant="scanner-secondary" 
                         size="sm" 
                         onClick={() => {
                           const r = (pages[activePageIndex].rotation + 90) % 360
@@ -536,7 +532,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                         🔄 Rotate 90°
                       </Button>
                       <Button 
-                        variant="danger" 
+                        variant="scanner-danger" 
                         size="sm" 
                         onClick={() => handleDeletePage(activePageIndex)}
                         className="py-1 px-3 rounded-xl text-xs"
@@ -709,16 +705,17 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                 <>
                   <Button 
                     type="button" 
+                    variant="scanner-primary"
                     onClick={handleCapture}
                     disabled={isCameraStarting || !!cameraError}
-                    className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 shadow-xl py-3 rounded-2xl flex items-center justify-center gap-2 group shrink-0"
+                    className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 group shrink-0"
                   >
                     <span className="text-base group-hover:scale-110 transition-transform">📸</span> Snap Photo
                   </Button>
                   {pages.length > 0 && (
                     <Button 
                       type="button" 
-                      variant="secondary"
+                      variant="scanner-secondary"
                       onClick={() => {
                         setActivePageIndex(pages.length - 1)
                         setStep('editor')
@@ -735,6 +732,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                 <>
                   <Button 
                     type="button" 
+                    variant="scanner-primary"
                     onClick={() => setStep('camera')}
                     className="w-full py-2.5 rounded-2xl text-xs"
                   >
@@ -742,9 +740,9 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                   </Button>
                   <Button 
                     type="button" 
-                    variant="secondary"
+                    variant="scanner-secondary"
                     onClick={() => setStep('compile')}
-                    className="w-full py-2.5 rounded-2xl text-xs border border-teal-500/20 text-teal-400 hover:bg-slate-850"
+                    className="w-full py-2.5 rounded-2xl text-xs"
                   >
                     ✓ Proceed to Compile
                   </Button>
@@ -756,7 +754,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                   <Button 
                     type="button" 
                     onClick={() => setStep('camera')}
-                    variant="secondary"
+                    variant="scanner-secondary"
                     disabled={isCompiling}
                     className="w-full py-2.5 rounded-2xl text-xs"
                   >
@@ -765,8 +763,9 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
                   <Button 
                     type="button" 
                     onClick={handleCompile}
+                    variant="scanner-primary"
                     disabled={isCompiling || pages.length === 0}
-                    className="w-full py-3 rounded-2xl text-xs font-black shadow-xl"
+                    className="w-full py-3 rounded-2xl text-xs font-black"
                   >
                     💾 Save to Vault
                   </Button>
