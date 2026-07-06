@@ -221,6 +221,37 @@ router.get('/api/reports/:id/file', async (req, res) => {
           return res.sendFile(filePath)
         }
       }
+      
+      // Stream from S3 directly to avoid CORS and link expiration issues
+      if (report.s3Key && !report.s3Url.startsWith('/uploads/') && !report.s3Url.startsWith('data:')) {
+        try {
+          const { GetObjectCommand } = require('@aws-sdk/client-s3')
+          const { s3Client } = require('../services/s3Service')
+          
+          console.log(`🔄 Streaming file from S3: ${report.s3Key}`)
+          const s3Response = await s3Client.send(new GetObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: report.s3Key,
+          }))
+          
+          res.setHeader('Content-Type', s3Response.ContentType || report.mimeType || 'application/pdf')
+          res.setHeader('Content-Disposition', 'inline')
+          
+          if (s3Response.Body && typeof s3Response.Body.pipe === 'function') {
+            return s3Response.Body.pipe(res)
+          } else {
+            const chunks = []
+            for await (const chunk of s3Response.Body) {
+              chunks.push(chunk)
+            }
+            const buffer = Buffer.concat(chunks)
+            return res.send(buffer)
+          }
+        } catch (s3Err) {
+          console.warn('Failed to stream from S3, falling back to redirect:', s3Err.message)
+        }
+      }
+      
       return res.redirect(report.s3Url)
     } else {
       return res.status(404).json({ error: 'File content not found.' })
