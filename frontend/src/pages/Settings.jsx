@@ -5,6 +5,8 @@ import { Card, CardHeader } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { useTranslation } from '../utils/translationService'
+import EditProfileModal from '../components/EditProfileModal'
+import DeleteAccountModal from '../components/DeleteAccountModal'
 
 function Settings() {
   const navigate = useNavigate()
@@ -28,12 +30,6 @@ function Settings() {
   const primaryAdmin = family.find(f => f.id === 'self') || family[0] || {}
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [deleteOtpCode, setDeleteOtpCode] = useState('')
-  const [deleteError, setDeleteError] = useState('')
-  const [deleteSuccess, setDeleteSuccess] = useState('')
-  const [isSendingDeleteOtp, setIsSendingDeleteOtp] = useState(false)
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
-  const [otpSent, setOtpSent] = useState(false)
 
   const [newName, setNewName] = useState('')
   const [newRelation, setNewRelation] = useState('Spouse')
@@ -42,31 +38,13 @@ function Settings() {
   const [imageError, setImageError] = useState('')
 
   const [editingProfile, setEditingProfile] = useState(null)
-  const [editName, setEditName] = useState('')
-  const [editAge, setEditAge] = useState('')
-  const [editRelation, setEditRelation] = useState('')
 
   const handleEditClick = (profile) => {
-    const rawAge = profile.age ? profile.age.replace(/\s*Yrs/i, '') : ''
     setEditingProfile(profile)
-    setEditName(profile.name || '')
-    setEditAge(rawAge)
-    setEditRelation(profile.relation || '')
   }
 
-  const handleSaveEdit = async (e) => {
-    e.preventDefault()
-    if (!editName.trim() || !editAge.trim()) return
-
-    const updates = {
-      name: editName.trim(),
-      age: editAge.trim()
-    }
-    if (editingProfile.id !== 'self') {
-      updates.relation = editRelation
-    }
-
-    await updateProfileDetails(editingProfile.id, updates)
+  const handleSaveEdit = async (profileId, updates) => {
+    await updateProfileDetails(profileId, updates)
     setEditingProfile(null)
   }
 
@@ -390,276 +368,25 @@ function Settings() {
       </div>
 
       {/* Edit Profile Modal */}
-      {editingProfile && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in space-y-4 text-left max-h-[calc(100vh-2rem)] overflow-y-auto no-scrollbar">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-900">
-              <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">Edit Profile</h3>
-              <button 
-                type="button"
-                onClick={() => setEditingProfile(null)}
-                className="text-slate-500 hover:text-slate-350 font-extrabold text-xs transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Full Name</label>
-                <input 
-                  type="text" 
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 text-xs px-3 py-2.5 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500/30"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Age</label>
-                <input 
-                  type="number" 
-                  value={editAge}
-                  onChange={(e) => setEditAge(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 text-xs px-3 py-2.5 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500/30"
-                  required
-                />
-              </div>
-
-              {editingProfile.id !== 'self' && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Relation</label>
-                  <select 
-                    value={editRelation}
-                    onChange={(e) => setEditRelation(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 text-xs px-3 py-2.5 rounded-xl text-slate-400 focus:outline-none focus:border-teal-500/30 cursor-pointer"
-                  >
-                    <option value="Spouse">Spouse</option>
-                    <option value="Child">Child</option>
-                    <option value="Father">Father</option>
-                    <option value="Mother">Mother</option>
-                    <option value="Sibling">Sibling</option>
-                    <option value="Grandparent">Grandparent</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <Button 
-                  type="submit"
-                  size="sm"
-                  className="flex-1 rounded-xl text-xs py-2.5"
-                >
-                  Save Changes
-                </Button>
-                <Button 
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setEditingProfile(null)}
-                  className="flex-1 rounded-xl text-xs py-2.5"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditProfileModal
+        editingProfile={editingProfile}
+        onClose={() => setEditingProfile(null)}
+        onSave={handleSaveEdit}
+      />
 
       {/* Delete Account Verification Modal */}
-      {deleteModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-slate-950 border border-rose-900/50 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fade-in space-y-5 text-left max-h-[calc(100vh-2rem)] overflow-y-auto no-scrollbar">
-            <div className="flex justify-between items-center pb-2 border-b border-rose-950/40">
-              <h3 className="font-extrabold text-sm text-rose-500 uppercase tracking-wider font-mono">
-                Delete Account
-              </h3>
-              <button 
-                type="button"
-                onClick={() => {
-                  if (!isDeletingAccount) {
-                    setDeleteModalOpen(false)
-                  }
-                }}
-                className="text-slate-500 hover:text-slate-350 font-extrabold text-xs transition-colors"
-                disabled={isDeletingAccount}
-              >
-                ✕
-              </button>
-            </div>
-
-            {deleteError && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-medium leading-relaxed">
-                {deleteError}
-              </div>
-            )}
-
-            {deleteSuccess && (
-              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-medium leading-relaxed">
-                {deleteSuccess}
-              </div>
-            )}
-
-            {!otpSent ? (
-              <div className="space-y-5">
-                <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10 space-y-2">
-                  <p className="text-xs text-rose-400 font-semibold uppercase tracking-wider font-mono">⚠️ Permanent Destruction Warning</p>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    You are about to permanently delete the account for <span className="font-mono text-rose-300 font-bold">{userEmail}</span>.
-                  </p>
-                  <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-1 pt-1">
-                    <li>All family profiles and initials will be cleared.</li>
-                    <li>All health records, lab markers, and prescriptions will be purged.</li>
-                    <li>All uploaded PDFs and photos will be deleted from cloud storage.</li>
-                    <li>This action cannot be undone.</li>
-                  </ul>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!userEmail) return
-                      setIsSendingDeleteOtp(true)
-                      setDeleteError('')
-                      try {
-                        await sendDeleteOtp(userEmail)
-                        setOtpSent(true)
-                      } catch (err) {
-                        setDeleteError(err.message || 'Failed to send verification code. Please try again.')
-                      } finally {
-                        setIsSendingDeleteOtp(false)
-                      }
-                    }}
-                    disabled={isSendingDeleteOtp}
-                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/25 flex items-center justify-center gap-2"
-                  >
-                    {isSendingDeleteOtp ? (
-                      <>
-                        <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Sending code...
-                      </>
-                    ) : (
-                      'Request Deletion OTP'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteModalOpen(false)}
-                    disabled={isSendingDeleteOtp}
-                    className="flex-1 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    A 6-digit verification code has been sent to <span className="font-mono text-emerald-300 font-bold">{userEmail}</span>. The code will expire in 5 minutes.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="delete-otp-input" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
-                    Enter Deletion OTP
-                  </label>
-                  <input 
-                    id="delete-otp-input"
-                    type="text" 
-                    placeholder="Enter 6-digit code"
-                    maxLength={6}
-                    value={deleteOtpCode}
-                    onChange={(e) => {
-                      setDeleteOtpCode(e.target.value.replace(/\D/g, ''))
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 text-sm font-mono text-center tracking-widest px-3 py-3 rounded-xl text-slate-100 focus:outline-none focus:border-red-500/30"
-                    disabled={isDeletingAccount}
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (deleteOtpCode.trim().length !== 6 || isDeletingAccount) return
-                      setIsDeletingAccount(true)
-                      setDeleteError('')
-                      setDeleteSuccess('')
-                      try {
-                        const res = await confirmDeleteAccount(userEmail, deleteOtpCode)
-                        setDeleteSuccess(res.message || 'Account successfully deleted. Logging out...')
-                        // Wait 2.5 seconds to show success before logging out and redirecting
-                        setTimeout(() => {
-                          logoutUser()
-                          setDeleteModalOpen(false)
-                          navigate('/')
-                        }, 2500)
-                      } catch (err) {
-                        setDeleteError(err.message || 'Failed to verify OTP. Please try again.')
-                        setIsDeletingAccount(false)
-                      }
-                    }}
-                    disabled={deleteOtpCode.trim().length !== 6 || isDeletingAccount}
-                    className="flex-1 order-last sm:order-first bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:active:scale-100 active:scale-[0.98] shadow-md shadow-black/25 flex items-center justify-center gap-2"
-                  >
-                    {isDeletingAccount ? (
-                      <>
-                        <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Deleting data...
-                      </>
-                    ) : (
-                      'Confirm Permanent Deletion'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteModalOpen(false)}
-                    disabled={isDeletingAccount}
-                    className="flex-1 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 font-bold text-xs rounded-xl py-3 px-4 transition-all duration-300 active:scale-[0.98]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (isDeletingAccount || isSendingDeleteOtp) return
-                      setIsSendingDeleteOtp(true)
-                      setDeleteError('')
-                      setDeleteSuccess('')
-                      try {
-                        await sendDeleteOtp(userEmail)
-                        setDeleteSuccess('A new OTP verification code has been sent.')
-                      } catch (err) {
-                        setDeleteError(err.message || 'Failed to resend code.')
-                      } finally {
-                        setIsSendingDeleteOtp(false)
-                      }
-                    }}
-                    disabled={isDeletingAccount || isSendingDeleteOtp}
-                    className="text-[11px] text-teal-400 hover:text-teal-300 hover:underline font-semibold font-mono"
-                  >
-                    Resend Code
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <DeleteAccountModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        userEmail={userEmail}
+        sendDeleteOtp={sendDeleteOtp}
+        confirmDeleteAccount={confirmDeleteAccount}
+        onSuccess={() => {
+          logoutUser()
+          setDeleteModalOpen(false)
+          navigate('/')
+        }}
+      />
     </div>
   )
 }

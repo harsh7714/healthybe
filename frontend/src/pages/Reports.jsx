@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Spinner } from '../components/ui/Spinner'
 import { DocumentScannerModal } from '../components/DocumentScannerModal'
+import ReportViewerModal from '../components/ReportViewerModal'
 
 function Reports() {
   const {
@@ -18,13 +19,13 @@ function Reports() {
     uploadError,
     renameReport,
     deleteReport,
+    userEmail,
   } = useHealth()
 
   const location = useLocation()
   const fileInputRef = useRef(null)
 
   const [viewingReport, setViewingReport] = useState(null)
-  const [viewerPageIdx, setViewerPageIdx] = useState(0)
   const [editingFileId, setEditingFileId] = useState(null)
   const [editingFileNameVal, setEditingFileNameVal] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -36,7 +37,20 @@ function Reports() {
       setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
     check()
     window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+
+    // Load PDF.js dynamically from CDN for inline multi-page rendering on mobile
+    if (!window.pdfjsLib) {
+      const script = document.createElement('script')
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js'
+      script.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
+      }
+      document.head.appendChild(script)
+    }
+
+    return () => {
+      window.removeEventListener('resize', check)
+    }
   }, [])
 
   useEffect(() => {
@@ -54,7 +68,6 @@ function Reports() {
   }
 
   const openReportViewer = (report) => {
-    setViewerPageIdx(0)
     setViewingReport(report)
   }
 
@@ -307,104 +320,12 @@ function Reports() {
       </div>
 
       {/* ── Document Viewer Modal ─────────────────────────────────── */}
-      {viewingReport && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-          <div className="max-w-2xl w-full bg-slate-950 border border-slate-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-
-            {/* Modal header */}
-            <div className="bg-slate-900 px-6 py-4 border-b border-slate-900 flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <h4 className="font-extrabold text-sm text-slate-200 truncate">{viewingReport.name}</h4>
-                <p className="text-[10px] text-slate-500 mt-0.5">{viewingReport.date} · {viewingReport.size}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-
-                <button
-                  onClick={() => setViewingReport(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal body */}
-            <div className="flex-1 bg-black overflow-auto flex flex-col items-center justify-center min-h-0">
-              {/* S3-backed image */}
-              {viewingReport.s3Url && viewingReport.type === 'IMAGE' && (
-                <img
-                  src={viewingReport.s3Url}
-                  alt={viewingReport.name}
-                  className="max-w-full max-h-[60vh] object-contain rounded-lg border border-slate-900"
-                />
-              )}
-
-              {/* S3-backed PDF — iframe */}
-              {viewingReport.s3Url && viewingReport.type === 'PDF' && (
-                <div className="w-full h-[60vh] flex flex-col">
-                  <iframe
-                    src={viewingReport.s3Url}
-                    title={viewingReport.name}
-                    className="w-full flex-1 rounded-b-lg"
-                    style={{ border: 'none' }}
-                  />
-                </div>
-              )}
-
-              {/* Legacy canvas pages (preset reports) */}
-              {!viewingReport.s3Url && viewingReport.pages?.length > 0 && (
-                <div className="flex flex-col items-center gap-4 p-4 w-full">
-                  <img
-                    src={viewingReport.pages[viewerPageIdx]}
-                    alt={`Page ${viewerPageIdx + 1}`}
-                    className="max-w-full max-h-[55vh] object-contain rounded-lg border border-slate-900"
-                  />
-                  {viewingReport.pages.length > 1 && (
-                    <div className="flex gap-4 items-center bg-slate-900 border border-slate-800 rounded-xl px-4 py-2">
-                      <button disabled={viewerPageIdx === 0}
-                        onClick={() => setViewerPageIdx(p => p - 1)}
-                        className="text-xs font-bold text-teal-400 disabled:text-slate-600 hover:text-teal-300 transition-colors px-2 py-1">
-                        ◄ Prev
-                      </button>
-                      <span className="text-xs font-bold text-slate-300 font-mono">
-                        Page {viewerPageIdx + 1} of {viewingReport.pages.length}
-                      </span>
-                      <button disabled={viewerPageIdx === viewingReport.pages.length - 1}
-                        onClick={() => setViewerPageIdx(p => p + 1)}
-                        className="text-xs font-bold text-teal-400 disabled:text-slate-600 hover:text-teal-300 transition-colors px-2 py-1">
-                        Next ►
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* No preview available */}
-              {!viewingReport.s3Url && (!viewingReport.pages || viewingReport.pages.length === 0) && (
-                <div className="text-center py-12 space-y-3">
-                  <span className="text-6xl">📄</span>
-                  <p className="text-sm font-semibold text-slate-300">Preset Report</p>
-                  <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                    This is a sample preset record. AI metrics have already been compiled into your dashboard.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* AI analysis badge if present */}
-            {viewingReport.analysis && (
-              <div className="px-6 py-3 bg-emerald-950/30 border-t border-emerald-900/30 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <p className="text-xs font-semibold text-emerald-400">
-                  Gemini AI analysis complete — metrics are reflected in your dashboard.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ReportViewerModal
+        viewingReport={viewingReport}
+        onClose={() => setViewingReport(null)}
+        userEmail={userEmail}
+        isMobile={isMobile}
+      />
 
       {/* Camera Document Scanner Modal */}
       <DocumentScannerModal

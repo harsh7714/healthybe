@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
 import { photoToPdf, photosToMultiPagePdf } from '../utils/photoToPdf'
 import { useTranslation } from '../utils/translationService'
@@ -16,6 +16,7 @@ function Navbar() {
 
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const cameraInputRef = useRef(null)
   const capturedPagesRef = useRef([])
 
@@ -271,110 +272,114 @@ function Navbar() {
       </nav>
 
       {/* 2. MOBILE TOP BAR */}
-      <header className="flex md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/80 px-4 items-center justify-between z-50 shadow-md">
-        <NavLink to="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full border border-slate-800/80 flex items-center justify-center bg-slate-950 overflow-hidden">
-            <img src="/favicon.ico" alt="HealthyBe Logo" className="w-full h-full object-cover" />
-          </div>
-          <span className="font-extrabold text-white text-base tracking-wide">HealthyBe</span>
-        </NavLink>
+      {location.pathname !== '/chat' && (
+        <header className="flex md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/80 px-4 items-center justify-between z-50 shadow-md">
+          <NavLink to="/" className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full border border-slate-800/80 flex items-center justify-center bg-slate-950 overflow-hidden">
+              <img src="/favicon.ico" alt="HealthyBe Logo" className="w-full h-full object-cover" />
+            </div>
+            <span className="font-extrabold text-white text-base tracking-wide">HealthyBe</span>
+          </NavLink>
 
-        <button
-          onClick={() => setIsLight(!isLight)}
-          aria-label="Toggle Theme"
-          className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 active:scale-95 transition-all"
-        >
-          {isLight ? (
-            <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z" />
-            </svg>
-          )}
-        </button>
-      </header>
+          <button
+            onClick={() => setIsLight(!isLight)}
+            aria-label="Toggle Theme"
+            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 active:scale-95 transition-all"
+          >
+            {isLight ? (
+              <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z" />
+              </svg>
+            )}
+          </button>
+        </header>
+      )}
 
       {/* 3. MOBILE BOTTOM NAVIGATION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-950/90 backdrop-blur-lg border-t border-slate-900/80 flex items-center justify-between px-6 pb-safe z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] md:hidden">
-        
-        {/* Tab 2: Dashboard */}
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-12 h-12 transition-all ${
-              isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
-            }`
-          }
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span className="text-[8px] font-bold mt-0.5">{t('nav.dashboard')}</span>
-        </NavLink>
-
-        {/* Tab 3: Emergency */}
-        <NavLink
-          to="/emergency"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-12 h-12 transition-all ${
-              isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
-            }`
-          }
-        >
-          <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <span className="text-[8px] font-bold mt-0.5">{t('nav.emergency')}</span>
-        </NavLink>
-
-        {/* Center: Camera FAB */}
-        <div className="relative -top-3">
-          <button
-            onClick={handleCameraClick}
-            aria-label="Scan Document"
-            className="w-12 h-12 bg-gradient-to-tr from-teal-500 to-cyan-500 text-slate-950 hover:from-teal-400 hover:to-cyan-400 rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(45,212,191,0.3)] active:scale-95 transition-all border-4 border-slate-950 focus:outline-none"
+      {location.pathname !== '/chat' && (
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-950/90 backdrop-blur-lg border-t border-slate-900/80 flex items-center justify-between px-6 pb-safe z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] md:hidden">
+          
+          {/* Tab 2: Dashboard */}
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center w-12 h-12 transition-all ${
+                isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
+              }`
+            }
           >
-            <svg className="w-5 h-5 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
-          </button>
+            <span className="text-[8px] font-bold mt-0.5">{t('nav.dashboard')}</span>
+          </NavLink>
+
+          {/* Tab 3: Emergency */}
+          <NavLink
+            to="/emergency"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center w-12 h-12 transition-all ${
+                isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
+              }`
+            }
+          >
+            <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-[8px] font-bold mt-0.5">{t('nav.emergency')}</span>
+          </NavLink>
+
+          {/* Center: Camera FAB */}
+          <div className="relative -top-3">
+            <button
+              onClick={handleCameraClick}
+              aria-label="Scan Document"
+              className="w-12 h-12 bg-gradient-to-tr from-teal-500 to-cyan-500 text-slate-950 hover:from-teal-400 hover:to-cyan-400 rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(45,212,191,0.3)] active:scale-95 transition-all border-4 border-slate-950 focus:outline-none"
+            >
+              <svg className="w-5 h-5 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Tab 4: Vault */}
+          <NavLink
+            to="/reports"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center w-12 h-12 transition-all ${
+                isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
+              }`
+            }
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            <span className="text-[8px] font-bold mt-0.5">{t('nav.reports')}</span>
+          </NavLink>
+
+          {/* Tab 5: Settings */}
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center w-12 h-12 transition-all ${
+                isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
+              }`
+            }
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="text-[8px] font-bold mt-0.5">{t('nav.settings')}</span>
+          </NavLink>
+
         </div>
-
-        {/* Tab 4: Vault */}
-        <NavLink
-          to="/reports"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-12 h-12 transition-all ${
-              isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
-            }`
-          }
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-          </svg>
-          <span className="text-[8px] font-bold mt-0.5">{t('nav.reports')}</span>
-        </NavLink>
-
-        {/* Tab 5: Settings */}
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-12 h-12 transition-all ${
-              isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
-            }`
-          }
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span className="text-[8px] font-bold mt-0.5">{t('nav.settings')}</span>
-        </NavLink>
-
-      </div>
+      )}
     </>
   )
 }

@@ -24,9 +24,29 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const editorContainerRef = useRef(null)
+  const isUnmountedRef = useRef(false)
 
   // Drag states for crop handles
   const [draggedHandle, setDraggedHandle] = useState(null) // 'top' | 'bottom' | 'left' | 'right'
+
+  // Global unmount & unload tracking to guarantee camera track release
+  useEffect(() => {
+    isUnmountedRef.current = false
+    const handleUnload = () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+      }
+    }
+    window.addEventListener('beforeunload', handleUnload)
+    window.addEventListener('pagehide', handleUnload)
+
+    return () => {
+      isUnmountedRef.current = true
+      stopCamera()
+      window.removeEventListener('beforeunload', handleUnload)
+      window.removeEventListener('pagehide', handleUnload)
+    }
+  }, [])
 
   // Initialize camera and get device list
   useEffect(() => {
@@ -69,16 +89,27 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
         throw new Error('Camera streaming not supported on this browser context')
       }
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+      // Guard check: stop stream and exit if user closed scanner before getUserMedia resolved
+      if (isUnmountedRef.current || !isOpen) {
+        stream.getTracks().forEach(track => track.stop())
+        return
+      }
+
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         videoRef.current.play().catch(e => console.warn('Video play failed:', e))
       }
     } catch (err) {
-      console.error('Camera access failed:', err)
-      setCameraError('Could not access camera. Please check permissions or select another device.')
+      if (!isUnmountedRef.current && isOpen) {
+        console.error('Camera access failed:', err)
+        setCameraError('Could not access camera. Please check permissions or select another device.')
+      }
     } finally {
-      setIsCameraStarting(false)
+      if (!isUnmountedRef.current && isOpen) {
+        setIsCameraStarting(false)
+      }
     }
   }
 
@@ -414,30 +445,27 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
             {/* Step 1: Camera View Finder */}
             {step === 'camera' && (
               <div className="relative w-full max-w-[320px] xs:max-w-lg aspect-[3/4] bg-slate-900 border border-slate-850 rounded-2xl overflow-hidden flex flex-col items-center justify-center">
-                {isCameraStarting ? (
-                  <div className="flex flex-col items-center gap-3">
+                <video 
+                  ref={videoRef} 
+                  className="w-full h-full object-cover" 
+                  autoPlay 
+                  playsInline 
+                  muted 
+                />
+
+                {isCameraStarting && (
+                  <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center gap-3 z-10">
                     <Spinner size="lg" />
                     <p className="text-xs text-slate-400">Accessing Camera...</p>
                   </div>
-                ) : cameraError ? (
-                  <div className="p-6 text-center space-y-4">
+                )}
+
+                {cameraError && (
+                  <div className="absolute inset-0 bg-slate-900 p-6 text-center flex flex-col items-center justify-center space-y-4 z-10">
                     <span className="text-4xl text-rose-500">⚠️</span>
                     <p className="text-sm font-semibold text-rose-400">{cameraError}</p>
                     <Button variant="scanner-secondary" size="sm" onClick={initCamera}>Try Again</Button>
                   </div>
-                ) : (
-                  <>
-                    <video 
-                      ref={videoRef} 
-                      className="w-full h-full object-cover" 
-                      autoPlay 
-                      playsInline 
-                      muted 
-                    />
-                    
-                    {/* Document Alignment Frame */}
-                    
-                  </>
                 )}
               </div>
             )}

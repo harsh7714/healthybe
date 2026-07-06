@@ -586,3 +586,57 @@ body.light .btn-scanner-danger {
 body.light .btn-scanner-danger:hover {
   background: linear-gradient(to right, #dc2626, #991b1b) !important;
 }
+
+/* ── Chat Page Light Mode Input & Button Overrides ────────── */
+body.light .chat-input-capsule {
+  background: linear-gradient(to right, rgba(204, 251, 241, 0.45), rgba(241, 245, 249, 0.85), rgba(207, 250, 254, 0.45)) !important;
+  border-color: #99f6e4 !important;
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08) !important;
+  transition: all 0.3s ease !important;
+}
+body.light .chat-input-capsule:focus-within {
+  border-color: #0d9488 !important;
+  box-shadow: 0 0 20px rgba(13, 148, 136, 0.2) !important;
+}
+body.light .chat-input-field {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #0f172a !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+body.light .chat-input-field::placeholder {
+  color: #94a3b8 !important;
+}
+body.light .chat-btn-attach {
+  background-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+body.light .chat-btn-attach:hover {
+  background-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+body.light .chat-btn-attach-active {
+  background-color: #ccfbf1 !important;
+  color: #0d9488 !important;
+}
+body.light .chat-btn-send:disabled {
+  background: #f1f5f9 !important;
+  background-color: #f1f5f9 !important;
+  color: #cbd5e1 !important;
+}
+
+body.light .chat-bubble-user {
+  background: linear-gradient(to top right, #f0fdfa, #ccfbf1) !important;
+  border-color: #99f6e4 !important;
+  color: #115e59 !important;
+  box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.05), 0 2px 4px -1px rgba(13, 148, 136, 0.03) !important;
+}
+body.light .chat-bubble-ai {
+  color: #1e293b !important;
+}
+body.light .chat-user-avatar {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0d9488 !important;
+}

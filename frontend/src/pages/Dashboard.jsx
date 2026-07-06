@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useHealth } from '../context/HealthContext'
-import { Card, CardHeader, CardContent } from '../components/ui/Card'
+import { Card, CardHeader } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { useTranslation } from '../utils/translationService'
 import { simplifyMetric } from '../utils/healthSimplifier'
+import VitalsTelemetry from '../components/dashboard/VitalsTelemetry'
+import LabMetrics from '../components/dashboard/LabMetrics'
+import MedicationLog from '../components/dashboard/MedicationLog'
+import CheckupList from '../components/dashboard/CheckupList'
+import DietGuidelines from '../components/dashboard/DietGuidelines'
 
 /* ─── Dashboard Component ──────────────────────────────────── */
 function Dashboard() {
@@ -240,128 +245,11 @@ function Dashboard() {
           
           {/* Left Panel: Vitals & Lab Measurements */}
           <div className="lg:col-span-8 space-y-8">
-            
             {/* Vitals Telemetry */}
-            <Card className="p-6 space-y-6 bg-slate-950/40">
-              <CardHeader>
-                <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">{t('dashboard.vitalsTitle')}</h3>
-                <span className="text-[10px] text-slate-500 font-mono">{t('dashboard.vitalsSubtitle')}</span>
-              </CardHeader>
-
-              {selectedProfile === 'all' ? (
-                // Combined family vitals listing
-                <div className="space-y-6">
-                  {Object.keys(vitals).length === 0 ? (
-                    <p className="text-xs text-slate-550 italic py-4">{t('dashboard.noVitals')}</p>
-                  ) : (
-                    Object.values(vitals).map((v, idx) => (
-                      <div key={idx} className="p-5 bg-gradient-to-tr from-slate-900/40 to-slate-900/10 border border-slate-900 rounded-2xl space-y-4 shadow-sm hover:border-slate-800 transition-colors">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-850 text-teal-400 font-bold text-xs flex items-center justify-center font-mono shadow-sm overflow-hidden">
-                            {v.profileImageUrl ? (
-                              <img src={v.profileImageUrl} alt={v.memberName} className="w-full h-full object-cover" />
-                            ) : (
-                              v.initials
-                            )}
-                          </div>
-                          <span className="text-xs font-bold text-slate-200 tracking-wide">{v.memberName}</span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                          {Object.entries(v.stats).map(([name, stat], sIdx) => (
-                            <div key={sIdx} className="p-3.5 bg-black/20 border border-slate-900 rounded-xl group hover:border-slate-850 transition-all">
-                              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">{name}</p>
-                              <p className="text-base font-black mt-1.5 text-slate-200 font-mono">{stat.value} <span className="text-[10px] text-slate-500 font-normal">{stat.unit}</span></p>
-                              <Badge variant={stat.status.toLowerCase().includes('borderline') ? 'borderline' : stat.status.toLowerCase().includes('high') || stat.status.toLowerCase().includes('critical') ? 'critical' : 'normal'} className="mt-2 text-[8px]">
-                                {stat.status}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              ) : (
-                // Individual vitals layout
-                <div>
-                  {Object.keys(vitals).length === 0 ? (
-                    <div className="py-10 text-center space-y-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto">
-                        <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs text-slate-500 italic">{t('dashboard.noVitals')}</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
-                      {Object.entries(vitals).map(([name, stat], idx) => (
-                        <div 
-                          key={idx} 
-                          className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/30 border border-slate-850 hover:border-slate-800/80 transition-all duration-300 shadow-md group hover:-translate-y-0.5"
-                        >
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{name}</p>
-                          <div className="flex items-baseline gap-1.5 mt-2.5">
-                            <span className="text-2xl font-black text-slate-200 tracking-tight font-mono">{stat.value}</span>
-                            <span className="text-[10px] text-slate-500 font-mono font-medium">{stat.unit}</span>
-                          </div>
-                          <Badge variant={stat.status.toLowerCase().includes('borderline') || stat.status.toLowerCase().includes('pre-diabetic') ? 'borderline' : stat.status.toLowerCase().includes('high') || stat.status.toLowerCase().includes('critical') ? 'critical' : 'normal'} className="mt-3">
-                            {stat.status}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
+            <VitalsTelemetry vitals={vitals} selectedProfile={selectedProfile} t={t} />
 
             {/* Lab Test Measurements Table */}
-            <Card className="p-6 space-y-4 bg-slate-950/40">
-              <CardHeader className="pb-2">
-                <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">{t('dashboard.labTitle')} ({metrics.length})</h3>
-                <span className="text-[10px] text-slate-500 font-mono">{t('dashboard.labSubtitle')}</span>
-              </CardHeader>
-
-              {metrics.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-4">{t('dashboard.noLab')}</p>
-              ) : (
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-900 text-slate-500 text-[10px] font-extrabold tracking-widest uppercase">
-                        <th className="pb-3 pr-4">{t('common.indicator')}</th>
-                        {selectedProfile === 'all' && <th className="pb-3 pr-4">{t('common.patient')}</th>}
-                        <th className="pb-3 pr-4">{t('common.value')}</th>
-                        <th className="pb-3 pr-4">{t('common.status')}</th>
-                        <th className="pb-3">{t('common.source')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-900/60 text-slate-300">
-                      {metrics.map((m, idx) => {
-                        const isAbnormal = m.status.toLowerCase().includes('high') || m.status.toLowerCase().includes('elevated') || m.status.toLowerCase().includes('decrease') || m.status.toLowerCase().includes('insufficiency')
-                        return (
-                          <tr key={idx} className="hover:bg-slate-900/15 transition-colors group">
-                            <td className="py-3.5 pr-4 font-bold text-slate-200 group-hover:text-teal-400 transition-colors">{m.name}</td>
-                            {selectedProfile === 'all' && <td className="py-3.5 pr-4 text-slate-400 font-semibold">{m.memberName}</td>}
-                            <td className="py-3.5 pr-4 font-mono font-black text-slate-100">
-                              {m.value} <span className="text-xs text-slate-550 font-normal">{m.unit}</span>
-                            </td>
-                            <td className="py-3.5 pr-4">
-                              <Badge variant={isAbnormal ? 'warning' : 'normal'}>
-                                {m.status}
-                              </Badge>
-                            </td>
-                            <td className="py-3.5 text-slate-500 font-mono text-[10px] max-w-[140px] truncate">{m.fileName}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card>
-
+            <LabMetrics metrics={metrics} selectedProfile={selectedProfile} t={t} />
           </div>
 
           {/* Right Panel: AI Insights & Dynamic Diet Plan */}
@@ -461,50 +349,14 @@ function Dashboard() {
                       <span className="text-xs text-emerald-400">●</span>
                     </div>
                     <h4 className="text-xs font-black text-emerald-400 uppercase tracking-wider">{t('dashboard.allOptimal')}</h4>
-                    <p className="text-[10px] text-slate-500 leading-relaxed">{t('dashboard.allOptimalDesc')}</p>
+                    <p className="text-[10px] text-slate-500">All markers within expected clinical range.</p>
                   </div>
                 )}
               </div>
             </Card>
 
             {/* Personalized Derived Diet Plan */}
-            <Card className="p-6 space-y-4 bg-slate-950/40">
-              <CardHeader className="pb-2">
-                <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">{t('dashboard.nutritionTitle')}</h3>
-                <span className="text-[9px] text-teal-400 font-black uppercase tracking-widest font-mono">{t('common.active')}</span>
-              </CardHeader>
-
-              {diet.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-4">{t('dashboard.noNutrition')}</p>
-              ) : (
-                <div className="space-y-5 text-xs">
-                  {selectedProfile === 'all' ? (
-                    // Categorized by member
-                    family.map(member => {
-                      const memberDiet = diet.filter(d => d.memberName === member.name)
-                      if (memberDiet.length === 0) return null
-                      return (
-                        <div key={member.id} className="space-y-2.5 p-4 bg-slate-900/25 border border-slate-900 rounded-xl">
-                          <p className="text-[10px] font-extrabold text-teal-400 uppercase tracking-widest border-b border-slate-850 pb-1.5">{member.name.toUpperCase()} ({member.relation.toUpperCase()})</p>
-                          <ul className="list-disc pl-4 space-y-1.5 text-slate-300">
-                            {memberDiet.map((d, dIdx) => (
-                              <li key={dIdx} className="leading-relaxed pl-0.5 text-slate-300 font-medium">{d.text}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    // Single list
-                    <ul className="list-disc pl-4 space-y-2.5 text-slate-300 font-medium leading-relaxed">
-                      {diet.map((d, dIdx) => (
-                        <li key={dIdx} className="pl-0.5">{d.text}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </Card>
+            <DietGuidelines diet={diet} selectedProfile={selectedProfile} family={family} t={t} />
 
           </div>
 
@@ -513,67 +365,9 @@ function Dashboard() {
         {/* Bottom Section: Cumulative Histories & AI Agent Log */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
           
-          {/* Cumulative Checkups Log (Text List) */}
-          <Card className="lg:col-span-6 p-6 space-y-4 bg-slate-950/40">
-            <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">{t('dashboard.checkupsTitle')}</h3>
-            
-            {checkups.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4">{t('dashboard.noCheckups')}</p>
-            ) : (
-              <div className="space-y-3.5 max-h-64 overflow-y-auto scrollbar-thin pr-1 text-xs">
-                {checkups.map((c, idx) => (
-                  <div key={idx} className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-2 hover:border-slate-800 transition-colors shadow-sm">
-                    <div className="flex justify-between items-center text-[10px] font-bold">
-                      <span className="text-teal-400 tracking-wider uppercase">{c.type}</span>
-                      <span className="text-slate-500 font-mono">{c.date}</span>
-                    </div>
-                    {selectedProfile === 'all' && (
-                      <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Patient: {c.memberName}</p>
-                    )}
-                    <p className="text-xs text-slate-300 leading-relaxed font-medium">{c.findings}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          <CheckupList checkups={checkups} selectedProfile={selectedProfile} t={t} />
 
-          {/* Cumulative Medication History (Text Table) */}
-          <Card className="lg:col-span-6 p-6 space-y-4 bg-slate-950/40">
-            <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">{t('dashboard.medsTitle')}</h3>
-            
-            {medications.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4">{t('dashboard.noMeds')}</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-900 text-slate-500 text-[10px] font-extrabold tracking-widest uppercase">
-                      <th className="pb-3 pr-4">{t('common.medication')}</th>
-                      {selectedProfile === 'all' && <th className="pb-3 pr-4">{t('common.patient')}</th>}
-                      <th className="pb-3 pr-4">{t('common.dose')}</th>
-                      <th className="pb-3 pr-4">{t('common.frequency')}</th>
-                      <th className="pb-3">{t('common.status')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-900/60 text-slate-300">
-                    {medications.map((med, idx) => (
-                      <tr key={idx} className="hover:bg-slate-900/15 transition-colors">
-                        <td className="py-3.5 pr-4 font-bold text-slate-200">{med.name}</td>
-                        {selectedProfile === 'all' && <td className="py-3.5 pr-4 text-slate-400 font-semibold">{med.memberName}</td>}
-                        <td className="py-3.5 pr-4 font-mono text-slate-300 font-semibold">{med.dose}</td>
-                        <td className="py-3.5 pr-4 text-slate-450 font-medium leading-relaxed">{med.freq}</td>
-                        <td className="py-3.5">
-                            <Badge variant={med.status.toLowerCase().includes('active') ? 'normal' : 'warning'}>
-                              {med.status}
-                            </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+          <MedicationLog medications={medications} selectedProfile={selectedProfile} t={t} />
 
         </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -14,6 +15,8 @@ function Chat() {
     preferences,
     userEmail
   } = useHealth()
+
+  const navigate = useNavigate()
 
   const { t } = useTranslation()
 
@@ -306,7 +309,7 @@ function Chat() {
   }
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 h-full flex flex-col justify-start pt-20 md:pt-32 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6 px-4 sm:px-8 overflow-hidden relative">
+    <div className="bg-[#0B0F19] text-slate-100 h-[100dvh] md:h-screen flex flex-col justify-start pt-4 md:pt-32 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:pb-6 px-4 sm:px-8 overflow-hidden relative">
 
       {/* Background Ambient Glows */}
       <div className="absolute top-[10%] left-[15%] w-[600px] h-[600px] rounded-full bg-teal-900/10 blur-[130px] pointer-events-none" />
@@ -314,54 +317,98 @@ function Chat() {
 
       <div className="max-w-4xl w-full mx-auto flex-1 flex flex-col justify-start overflow-hidden relative z-10">
 
-        {/* Welcome Banner */}
-        {messages.length <= 1 && (
-          <div className="text-center py-6 sm:py-8 space-y-2.5 shrink-0">
-            <h2 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-tight animate-fade-in">
-              {t('chat.hello')}{firstName}
-            </h2>
-            <p className="text-lg sm:text-xl font-bold text-slate-500 tracking-tight">
-              {t('chat.howCanIHelp')}
-            </p>
-          </div>
-        )}
+        {/* Chat Page Header (Back arrow on mobile, Clear Chat on all screens) */}
+        <div className="py-2 shrink-0 flex justify-between items-center w-full min-h-[44px]">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="p-2.5 -ml-2.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-900 transition-colors md:invisible"
+            aria-label="Go Back"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {messages.length > 1 && (
+            <button
+              onClick={clearChat}
+              className="text-[10px] uppercase tracking-wider font-extrabold px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-red-900 text-white active:scale-95 transition-all hover:brightness-110 shadow-md"
+            >
+              {t('chat.clearBtn')}
+            </button>
+          )}
+        </div>
 
         {/* Message Panel */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-6 no-scrollbar py-2">
-          {messages.map((msg, idx) => (
-            <div key={idx} className={`flex gap-4 items-start w-full ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-              {msg.sender === 'ai' && (
-                <div className="w-8 h-8 rounded-full border border-slate-800 flex items-center justify-center bg-slate-950 shadow-md overflow-hidden flex-shrink-0 mt-1">
-                  <img src="/favicon.ico" alt="HealthyBe AI Logo" className="w-full h-full object-cover rounded-full" />
-                </div>
-              )}
-              <div className={`leading-relaxed text-sm ${
-                msg.sender === 'user'
-                  ? 'bg-gradient-to-tr from-slate-900 to-slate-950 border border-slate-800 px-5 py-3 rounded-2xl text-slate-200 max-w-lg shadow-md'
-                  : 'text-slate-300 flex-1 py-1'
-              }`}>
-                {msg.sender === 'user' ? (
-                  <p className="whitespace-pre-line font-medium leading-relaxed">{parseInline(msg.text)}</p>
-                ) : (
-                  <div className="space-y-1">{renderMarkdown(msg.isTranslationKey ? t(msg.text) : msg.text)}</div>
-                )}
-                <span className="block text-[8px] text-slate-500 mt-2 font-mono tracking-wider">{msg.time}</span>
+        <div className="flex-1 overflow-y-auto pr-1 space-y-6 no-scrollbar py-2 flex flex-col min-h-0">
+          {messages.length <= 1 ? (
+            <div className="my-auto py-6 sm:py-8 space-y-6 flex flex-col items-center justify-center w-full">
+              {/* Welcome Banner */}
+              <div className="text-center space-y-2.5 shrink-0">
+                <h2 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-tight animate-fade-in">
+                  {t('chat.hello')}{firstName}
+                </h2>
+                <p className="text-lg sm:text-xl font-bold text-slate-500 tracking-tight">
+                  {t('chat.howCanIHelp')}
+                </p>
               </div>
-              {msg.sender === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-teal-400 font-bold text-[10px] flex-shrink-0 shadow-md mt-1 overflow-hidden">
-                  {activeProfile?.profileImageUrl ? (
-                    <img src={activeProfile?.profileImageUrl} alt={activeProfile?.name || ''} className="w-full h-full object-cover" />
-                  ) : (
-                    activeProfile?.initials || '?'
+
+              {/* Suggestion cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl mx-auto py-4">
+                {suggestions.map((sug, idx) => (
+                  <Card
+                    key={idx}
+                    onClick={() => !isTyping && handleSuggestionClick(sug.prompt)}
+                    className="p-5 text-left bg-slate-950/30 border border-slate-900/80 hover:bg-slate-900/60 hover:border-slate-800 cursor-pointer flex flex-col justify-between h-28 sm:h-32 group transition-all duration-300"
+                  >
+                    <p className="text-xs font-semibold text-slate-400 leading-relaxed group-hover:text-slate-200 transition-colors">
+                      {sug.text}
+                    </p>
+                    <span className="text-[10px] text-slate-500 group-hover:text-teal-400 font-bold self-end transition-colors flex items-center gap-1 font-mono">
+                      ASK AI <span>→</span>
+                    </span>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {messages.map((msg, idx) => (
+                <div key={idx} className={`flex gap-4 items-start w-full ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                  {msg.sender === 'ai' && (
+                    <div className="w-8 h-8 rounded-full border border-slate-800 flex items-center justify-center bg-slate-950 shadow-md overflow-hidden flex-shrink-0 mt-1">
+                      <img src="/favicon.ico" alt="HealthyBe AI Logo" className="w-full h-full object-cover rounded-full" />
+                    </div>
+                  )}
+                  <div className={`leading-relaxed text-sm ${
+                    msg.sender === 'user'
+                      ? 'chat-bubble-user bg-gradient-to-tr from-slate-900 to-slate-950 border border-slate-800 px-5 py-3 rounded-2xl text-slate-200 max-w-lg shadow-md'
+                      : 'chat-bubble-ai text-slate-300 flex-1 py-1'
+                  }`}>
+                    {msg.sender === 'user' ? (
+                      <p className="whitespace-pre-line font-medium leading-relaxed">{parseInline(msg.text)}</p>
+                    ) : (
+                      <div className="space-y-1">{renderMarkdown(msg.isTranslationKey ? t(msg.text) : msg.text)}</div>
+                    )}
+                    <span className="block text-[8px] text-slate-500 mt-2 font-mono tracking-wider">{msg.time}</span>
+                  </div>
+                  {msg.sender === 'user' && (
+                    <div className="chat-user-avatar w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-teal-400 font-bold text-[10px] flex-shrink-0 shadow-md mt-1 overflow-hidden">
+                      {activeProfile?.profileImageUrl ? (
+                        <img src={activeProfile?.profileImageUrl} alt={activeProfile?.name || ''} className="w-full h-full object-cover" />
+                      ) : (
+                        activeProfile?.initials || '?'
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          )}
 
           {/* Typing indicator */}
           {isTyping && (
-            <div className="flex gap-4 items-start w-full">
+            <div className="flex gap-4 items-start w-full mt-4">
               <div className="w-8 h-8 rounded-full border border-slate-800 flex items-center justify-center bg-slate-950 shadow-md overflow-hidden flex-shrink-0 mt-1">
                 <img src="/favicon.ico" alt="HealthyBe AI Logo" className="w-full h-full object-cover rounded-full" />
               </div>
@@ -378,41 +425,10 @@ function Chat() {
           <div ref={chatBottomRef} />
         </div>
 
-        {/* Suggestion cards (shown before first message) */}
-        {messages.length <= 1 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl mx-auto py-6 shrink-0">
-            {suggestions.map((sug, idx) => (
-              <Card
-                key={idx}
-                onClick={() => !isTyping && handleSuggestionClick(sug.prompt)}
-                className="p-5 text-left bg-slate-950/30 border border-slate-900/80 hover:bg-slate-900/60 hover:border-slate-800 cursor-pointer flex flex-col justify-between h-32 group"
-              >
-                <p className="text-xs font-semibold text-slate-400 leading-relaxed group-hover:text-slate-200 transition-colors">
-                  {sug.text}
-                </p>
-                <span className="text-[10px] text-slate-500 group-hover:text-teal-400 font-bold self-end transition-colors flex items-center gap-1 font-mono">
-                  ASK AI <span>→</span>
-                </span>
-              </Card>
-            ))}
-          </div>
-        )}
-
         {/* Bottom Input Bar */}
-        <div className="w-full max-w-3xl mx-auto space-y-3 shrink-0 pt-2 relative">
+        <div className="w-full max-w-3xl mx-auto space-y-1.5 shrink-0 pt-0.5 relative">
 
-          {messages.length > 1 && (
-            <div className="flex items-center justify-end">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={clearChat}
-                className="text-[10px] uppercase tracking-wider rounded-xl py-1.5"
-              >
-                {t('chat.clearBtn')}
-              </Button>
-            </div>
-          )}
+
 
           {/* File Picker Popover */}
           {showFilePicker && (
@@ -450,16 +466,15 @@ function Chat() {
             </>
           )}
 
-          {/* Input Capsule */}
-          <form onSubmit={handleSend} className="flex gap-3 relative w-full items-center">
-            <div className="flex-1 bg-slate-900/60 border border-slate-900 rounded-full py-1.5 pl-2.5 pr-2.5 flex items-center justify-between focus-within:border-teal-500/50 focus-within:ring-2 focus-within:ring-teal-950/30 focus-within:shadow-[0_0_20px_rgba(45,212,191,0.1)] transition-all duration-300 shadow-lg backdrop-blur-md">
+          <form onSubmit={handleSend} className="flex gap-2 relative w-full items-center">
+            <div className="chat-input-capsule flex-1 bg-gradient-to-r from-teal-950/20 via-slate-900/60 to-cyan-950/20 border border-slate-800/80 rounded-full py-1 pl-2 pr-2 flex items-center justify-between focus-within:border-teal-500/50 focus-within:ring-2 focus-within:ring-teal-950/30 transition-all duration-300 shadow-lg backdrop-blur-md">
 
               <button
                 type="button"
                 onClick={() => setShowFilePicker(!showFilePicker)}
-                className={`w-9 h-9 rounded-full transition-all text-lg font-black flex items-center justify-center ${
+                className={`chat-btn-attach w-8 h-8 rounded-full transition-all text-base font-black flex items-center justify-center ${
                   showFilePicker
-                    ? 'bg-teal-950/60 text-teal-400'
+                    ? 'chat-btn-attach-active bg-teal-950/60 text-teal-400'
                     : 'bg-slate-800/40 text-slate-400 hover:text-slate-200'
                 }`}
                 aria-label="Select report to analyze"
@@ -468,12 +483,12 @@ function Chat() {
               </button>
 
               {attachedFile && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-teal-950/60 border border-teal-900/60 rounded-full text-[10px] font-bold text-teal-400 select-none animate-fade-in shrink-0 ml-1.5 shadow-sm">
+                <div className="flex items-center gap-1 bg-teal-950/60 border border-teal-900/60 rounded-full px-2 py-0.5 text-[9px] font-bold text-teal-400 select-none animate-fade-in shrink-0 ml-1 shadow-sm">
                   <span>📄 {attachedFile.name.split('_').slice(0, 2).join('_')}...</span>
                   <button
                     type="button"
                     onClick={() => setAttachedFile(null)}
-                    className="text-teal-600 hover:text-rose-400 font-extrabold text-[10px] ml-1 transition-colors"
+                    className="text-teal-600 hover:text-rose-400 font-extrabold text-[9px] ml-1 transition-colors"
                   >
                     ✕
                   </button>
@@ -485,17 +500,17 @@ function Chat() {
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 placeholder={attachedFile ? t('chat.promptPlaceholder') : t('chat.placeholder')}
-                className="flex-1 bg-transparent text-sm px-3 py-2 text-slate-200 focus:outline-none placeholder:text-slate-500"
+                className="chat-input-field flex-1 bg-transparent text-xs px-2 py-1 text-slate-200 focus:outline-none placeholder:text-slate-500"
                 disabled={isTyping}
               />
 
               <button
                 type="submit"
                 disabled={(!inputVal.trim() && !attachedFile) || isTyping}
-                className="w-9 h-9 bg-gradient-to-r from-teal-500 to-cyan-500 disabled:from-slate-800 disabled:to-slate-800 text-black disabled:text-slate-600 font-extrabold text-sm rounded-full flex items-center justify-center transition-all shadow-md shrink-0"
+                className="chat-btn-send w-8 h-8 bg-gradient-to-r from-teal-500 to-cyan-500 disabled:from-slate-800 disabled:to-slate-800 text-black disabled:text-slate-600 font-extrabold text-xs rounded-full flex items-center justify-center transition-all shadow-md shrink-0"
               >
                 {isTyping ? (
-                  <svg className="animate-spin w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
