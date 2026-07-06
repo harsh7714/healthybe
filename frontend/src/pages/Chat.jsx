@@ -318,10 +318,10 @@ function Chat() {
       <div className="max-w-4xl w-full mx-auto flex-1 flex flex-col justify-start overflow-hidden relative z-10">
 
         {/* Chat Page Header (Back arrow on mobile, Clear Chat on all screens) */}
-        <div className="py-2 shrink-0 flex justify-between items-center w-full min-h-[44px]">
+        <div className="py-1 shrink-0 flex justify-between items-center w-full min-h-[24px]">
           <button
             onClick={() => navigate('/dashboard')}
-            className="p-2.5 -ml-2.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-900 transition-colors md:invisible"
+            className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-900 transition-colors md:invisible"
             aria-label="Go Back"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
