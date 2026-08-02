@@ -92,9 +92,99 @@ router.post('/api/auth/login', async (req, res) => {
       await Profile.create(defaultProfiles)
     }
 
-    res.json({ success: true, user: { email: user.email, name: user.name } })
+    res.json({ success: true, user: { email: user.email, name: user.name, profileImageUrl: user.profileImageUrl } })
   } catch (err) {
     console.error('Login error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// In-Memory store fallback when MongoDB is offline
+const memoryUsers = new Map()
+const memoryProfiles = new Map()
+
+// Google Auth Endpoint (Sign in / Sign up with Google Account)
+router.post('/api/auth/google', async (req, res) => {
+  try {
+    const { email, name, picture, googleId } = req.body
+    if (!email) {
+      return res.status(400).json({ error: 'Google email is required.' })
+    }
+
+    const trimEmail = email.trim().toLowerCase()
+    const userName = (name || trimEmail.split('@')[0]).trim()
+    const userInitials = userName.split(' ').map(p => p.charAt(0)).join('').toUpperCase().slice(0, 2)
+
+    let user = null
+    let pictureUrl = picture || null
+
+    try {
+      if (User.db && User.db.readyState === 1) {
+        user = await User.findOne({ email: trimEmail })
+        if (user) {
+          if (picture && (!user.profileImageUrl || user.profileImageUrl !== picture)) {
+            user.profileImageUrl = picture
+          }
+          if (googleId) user.googleId = googleId
+          await user.save()
+        } else {
+          const dummyPassword = await bcrypt.hash(`google_${Date.now()}_${Math.random()}`, 10)
+          user = await User.create({
+            email: trimEmail,
+            name: userName,
+            password: dummyPassword,
+            googleId: googleId || null,
+            profileImageUrl: picture || null
+          })
+        }
+
+        let selfProfile = await Profile.findOne({ userId: trimEmail, id: 'self' })
+        if (!selfProfile) {
+          selfProfile = await Profile.create({
+            userId: trimEmail,
+            id: 'self',
+            name: userName,
+            relation: 'Self (Primary)',
+            age: '25 Yrs',
+            email: trimEmail,
+            initials: userInitials,
+            profileImageUrl: picture || null
+          })
+        } else if (picture && (!selfProfile.profileImageUrl || selfProfile.profileImageUrl !== picture)) {
+          selfProfile.profileImageUrl = picture
+          await selfProfile.save()
+        }
+
+        pictureUrl = picture || selfProfile.profileImageUrl || null
+      } else {
+        throw new Error('DB Offline')
+      }
+    } catch (dbErr) {
+      // In-Memory Fallback
+      user = { email: trimEmail, name: userName, profileImageUrl: pictureUrl }
+      memoryUsers.set(trimEmail, user)
+      memoryProfiles.set(trimEmail, [{
+        userId: trimEmail,
+        id: 'self',
+        name: userName,
+        relation: 'Self (Primary)',
+        age: '25 Yrs',
+        email: trimEmail,
+        initials: userInitials,
+        profileImageUrl: pictureUrl
+      }])
+    }
+
+    res.json({
+      success: true,
+      user: {
+        email: user.email,
+        name: user.name,
+        profileImageUrl: pictureUrl
+      }
+    })
+  } catch (err) {
+    console.error('Google Auth error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })

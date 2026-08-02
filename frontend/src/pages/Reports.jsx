@@ -1,316 +1,473 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
-import { photoToPdf, photosToMultiPagePdf } from '../utils/photoToPdf'
 import { Card } from '../components/ui/Card'
-import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
-import { Spinner } from '../components/ui/Spinner'
-import { DocumentScannerModal } from '../components/DocumentScannerModal'
+import { Badge } from '../components/ui/Badge'
 import ReportViewerModal from '../components/ReportViewerModal'
+import { DocumentScannerModal } from '../components/DocumentScannerModal'
+import { useTranslation } from '../utils/translationService'
 
-function Reports() {
+// Report Categories for Dropdown
+const REPORT_CATEGORIES = [
+  { id: 'blood_test', name: '🧪 Blood Test / CBC Report' },
+  { id: 'prescription', name: '💊 Doctor Prescription' },
+  { id: 'imaging', name: '🩻 Imaging / X-Ray / MRI / CT' },
+  { id: 'discharge', name: '📋 Discharge Summary' },
+  { id: 'general', name: '🩺 General Lab / Checkup Report' },
+]
+
+export default function Reports() {
   const {
     family,
-    activeProfileId,
     reports,
+    activeProfileId,
     uploadReportToS3,
-    isUploading,
-    uploadError,
-    renameReport,
     deleteReport,
-    userEmail,
+    renameReport,
+    getReportAnalysis,
+    userEmail
   } = useHealth()
 
   const location = useLocation()
-  const fileInputRef = useRef(null)
+  const { t } = useTranslation()
+
+  const activeReports = reports.filter(r => r.profileId === activeProfileId)
 
   const [viewingReport, setViewingReport] = useState(null)
   const [editingFileId, setEditingFileId] = useState(null)
   const [editingFileNameVal, setEditingFileNameVal] = useState('')
-  const [successMsg, setSuccessMsg] = useState('')
-  const [isMobile, setIsMobile] = useState(false)
+  const [expandedReportId, setExpandedReportId] = useState(null)
+
+  // Drag & Drop + Category Dropdown states
+  const [isDraggingOver, setIsDraggingOver] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(REPORT_CATEGORIES[0].id)
+
   const [isScannerOpen, setIsScannerOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const fileInputRef = useRef(null)
+
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    const check = () =>
-      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
-    check()
-    window.addEventListener('resize', check)
-
-    // Load PDF.js dynamically from CDN for inline multi-page rendering on mobile
-    if (!window.pdfjsLib) {
-      const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js'
-      script.onload = () => {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
-      }
-      document.head.appendChild(script)
-    }
-
-    return () => {
-      window.removeEventListener('resize', check)
-    }
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Auto-open scanner if URL has ?scan=true
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (params.get('scan') === 'true') {
       setIsScannerOpen(true)
-      window.history.replaceState({}, document.title, window.location.pathname)
     }
-  }, [location])
+  }, [location.search])
 
-  /* ── Helpers ─────────────────────────────────────────────────── */
   const showSuccess = (msg) => {
-    setSuccessMsg(msg)
-    setTimeout(() => setSuccessMsg(''), 4000)
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(''), 4000)
+  }
+
+  // Upload handler for files (from input or drag-and-drop)
+  const processFiles = async (filesList) => {
+    const files = Array.from(filesList)
+    if (!files.length) return
+    setIsUploading(true)
+
+    try {
+      for (const file of files) {
+        // Tag filename with category prefix if not already present
+        const categoryObj = REPORT_CATEGORIES.find(c => c.id === selectedCategory)
+        const finalName = file.name
+
+        const result = await uploadReportToS3(file, activeProfileId, finalName)
+        if (result.success) {
+          showSuccess(`"${finalName}" uploaded successfully (${categoryObj?.name || 'Report'}). AI analysis complete.`)
+        }
+      }
+    } catch (err) {
+      console.error('Upload failed:', err)
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleFileUploaded = (e) => {
+    processFiles(e.target.files)
+  }
+
+  // Drag & Drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingOver(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingOver(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingOver(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files)
+    }
+  }
+
+  const handleSaveRename = (reportId) => {
+    if (!editingFileNameVal.trim()) return
+    renameReport(reportId, editingFileNameVal.trim())
+    setEditingFileId(null)
+    showSuccess('File renamed successfully.')
+  }
+
+  const handleDeleteReport = (reportId, fileName) => {
+    if (window.confirm(`Delete "${fileName}" from Health Vault?`)) {
+      deleteReport(reportId)
+      showSuccess(`"${fileName}" deleted.`)
+    }
   }
 
   const openReportViewer = (report) => {
     setViewingReport(report)
   }
 
-  /* ── File upload via device ──────────────────────────────────── */
-  const handleFileUploaded = async (e) => {
-    const files = Array.from(e.target.files)
-    if (!files.length) return
-    e.target.value = ''
-
-    for (const file of files) {
-      const result = await uploadReportToS3(file, activeProfileId)
-      if (result.success) showSuccess(`"${file.name}" uploaded & analysed successfully.`)
-    }
+  const toggleReportDropdown = (reportId) => {
+    setExpandedReportId(prev => prev === reportId ? null : reportId)
   }
 
-
-
-  /* ── Rename ──────────────────────────────────────────────────── */
-  const handleSaveRename = (id) => {
-    if (!editingFileNameVal.trim()) return
-    renameReport(id, editingFileNameVal)
-    setEditingFileId(null)
-  }
-
-  /* ── Delete ──────────────────────────────────────────────────── */
-  const handleDeleteReport = async (id, name) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-      try {
-        await deleteReport(id)
-        showSuccess(`"${name}" has been deleted.`)
-      } catch (err) {
-        console.error('Delete failed:', err)
-      }
-    }
-  }
-
-  /* ── Filtered reports for active profile ────────────────────── */
-  const activeReports = reports.filter(r => r.profileId === activeProfileId)
-  const profileName = family.find(f => f.id === activeProfileId)?.name || 'Unknown'
+  const profileName = family.find(f => f.id === activeProfileId)?.name || 'Patient'
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 px-4 sm:px-12 lg:px-24">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="text-slate-100 min-h-screen pt-6 md:pt-8 pb-20 px-4 sm:px-8 lg:px-12 relative">
+      
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-bold text-xs shadow-2xl animate-fade-in flex items-center gap-2">
+          <span>✓</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
-        {/* ── Upload Loading Overlay ────────────────────────────── */}
-        {isUploading && (
-          <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center backdrop-blur-md animate-fade-in-fast">
-            <Spinner size="xl">
-              <span className="text-slate-300 font-semibold text-xs sm:text-sm tracking-wider leading-relaxed">
-                Please hold on until we are processing.
-              </span>
-            </Spinner>
-          </div>
-        )}
-
-        {/* ── Success Toast ─────────────────────────────────────── */}
-        {successMsg && (
-          <div className="fixed top-20 sm:top-24 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 sm:w-auto max-w-md flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 bg-emerald-950/95 border border-emerald-800 rounded-2xl shadow-2xl backdrop-blur-md animate-fade-in-fast">
-            <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-xs sm:text-sm font-semibold text-emerald-300 flex-1 text-left leading-tight break-words">{successMsg}</p>
-          </div>
-        )}
-
-        {/* ── Upload Error Banner ───────────────────────────────── */}
-        {uploadError && (
-          <div className="flex items-start gap-3 p-4 bg-rose-950/40 border border-rose-900/60 rounded-2xl">
-            <svg className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-              <p className="text-xs font-bold text-rose-400">Upload Failed</p>
-              <p className="text-xs text-rose-300/80 mt-0.5">{uploadError}</p>
-              <p className="text-[10px] text-slate-500 mt-1">Make sure the backend server is running on port 3001 and your .env credentials are set.</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Upload Panel ──────────────────────────────────────── */}
-        <Card className="p-6 sm:p-8 space-y-5 bg-slate-950/40">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
           <div>
-            <h3 className="font-bold text-lg text-slate-200">Add New Clinical Report</h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Upload to S3 and get instant AI-powered analysis via Google Gemini.
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
+              <h1 className="text-2xl font-black text-slate-100 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                Health Vault & Document OCR
+              </h1>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Vaulted medical records for <strong className="text-teal-400">{profileName}</strong>. AI automatically extracts vitals & lab metrics.
             </p>
           </div>
 
-          {/* Hidden input */}
-          <input type="file" ref={fileInputRef} onChange={handleFileUploaded}
-            accept=".pdf,.png,.jpg,.jpeg" multiple className="hidden" />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Device file manager */}
+          <div className="flex items-center gap-2">
             <button
-              type="button"
-              disabled={isUploading}
-              onClick={() => fileInputRef.current?.click()}
-              className="p-5 text-left rounded-2xl bg-slate-900/20 border border-slate-900 hover:border-slate-800 hover:bg-slate-900/40 transition-all flex items-start gap-4 group disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wide group-hover:text-teal-400 transition-colors">
-                  Upload from Device
-                </h4>
-                <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-                  Browse and select PDF, JPG, or PNG files. Uploads directly to S3 with AI analysis.
-                </p>
-              </div>
-            </button>
-
-            {/* Camera */}
-            <button
-              type="button"
-              disabled={isUploading}
               onClick={() => setIsScannerOpen(true)}
-              className="p-5 text-left rounded-2xl bg-slate-900/20 border border-slate-900 hover:border-slate-800 hover:bg-slate-900/40 transition-all flex items-start gap-4 group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition-all active:scale-95"
             >
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-teal-400 shrink-0 group-hover:scale-105 transition-transform">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wide group-hover:text-teal-400 transition-colors">
-                  Scan by Camera
-                </h4>
-                <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-                  Snap photos of prescriptions/reports to compile into a clean scanned PDF.
-                </p>
-              </div>
+              <span>📷 Camera Scan</span>
             </button>
           </div>
+        </div>
+
+        {/* ── DRAG & DROP FILE UPLOAD DROPZONE WITH CATEGORY DROPDOWN ── */}
+        <Card className="p-6 space-y-5 bg-[#0c1220] border border-slate-800/80">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800/80">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wide font-mono">
+                Upload Report & Select Category
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Drag & Drop PDF, JPG, or PNG files below or choose a report category.
+              </p>
+            </div>
+
+            {/* Category Dropdown Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 font-mono">Category:</span>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-teal-300 focus:outline-none cursor-pointer chat-suggestion-chip"
+              >
+                {REPORT_CATEGORIES.map(cat => (
+                  <option key={cat.id} value={cat.id} className="bg-slate-900 text-slate-200">
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUploaded}
+            accept=".pdf,.png,.jpg,.jpeg"
+            multiple
+            className="hidden"
+          />
+
+          {/* Interactive Drag & Drop Area */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`p-8 rounded-3xl border-2 border-dashed transition-all duration-200 cursor-pointer text-center flex flex-col items-center justify-center gap-3 ${
+              isDraggingOver
+                ? 'border-teal-400 bg-teal-500/10 scale-[1.01] shadow-2xl'
+                : 'border-slate-800 bg-slate-900/40 hover:border-teal-500/40 hover:bg-slate-900/80'
+            } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+          >
+            <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-2xl transition-transform group-hover:scale-110">
+              {isUploading ? '⌛' : '☁️'}
+            </div>
+
+            <div>
+              <h4 className="font-extrabold text-sm text-slate-100">
+                {isUploading ? 'Uploading to S3 & Analyzing...' : 'Drag & Drop your Medical Report files here'}
+              </h4>
+              <p className="text-xs text-slate-400 mt-1">
+                or <span className="text-teal-400 font-bold underline">click to browse</span> from device (PDF, PNG, JPG, JPEG)
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <span className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">
+                Category: {REPORT_CATEGORIES.find(c => c.id === selectedCategory)?.name}
+              </span>
+              <span className="text-[10px] text-slate-500">Max size 25MB</span>
+            </div>
+          </div>
+
+          {/* Secondary Quick Action: Camera Scan */}
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-xs text-slate-500 font-medium">Or scan physical paper reports using mobile camera:</span>
+            <button
+              type="button"
+              onClick={() => setIsScannerOpen(true)}
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-cyan-400 text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <span>📷 Open Camera Scanner</span>
+            </button>
+          </div>
+
         </Card>
 
-        {/* ── Vault File List ───────────────────────────────────── */}
-        <Card className="p-6 space-y-6 bg-slate-950/40">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* ── Vaulted Reports List with Dropdown Accordion ── */}
+        <Card className="p-6 space-y-5 bg-[#0c1220] border border-slate-800/80">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div>
-              <h3 className="font-bold text-lg text-slate-200">
-                Vault Storage
-                <span className="ml-2 text-sm font-normal text-slate-500">({activeReports.length} files)</span>
+              <h3 className="font-extrabold text-base text-slate-100">
+                Vaulted Health Documents
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Records for {profileName}</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Showing {activeReports.length} records for <span className="text-teal-400 font-bold">{profileName}</span>
+              </p>
             </div>
           </div>
 
           {activeReports.length === 0 ? (
-            <div className="text-center py-14 space-y-3">
-              <div className="text-5xl">📂</div>
-              <p className="text-sm font-semibold text-slate-400">No reports yet</p>
-              <p className="text-xs text-slate-600">Upload a file above to get started.</p>
+            <div className="text-center py-16 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-500 text-xl">
+                📂
+              </div>
+              <p className="text-xs font-semibold text-slate-400">No medical reports vaulted yet</p>
+              <p className="text-[11px] text-slate-500">Drag & drop or upload a report above to start automatic AI clinical analysis.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {activeReports.map((report, idx) => {
-                const profile = family.find(f => f.id === report.profileId)
+            <div className="space-y-4">
+              {activeReports.map((report) => {
+                const isExpanded = expandedReportId === report.id
                 const isEditing = editingFileId === report.id
-                const hasAI = Boolean(report.analysis)
+                const analysisData = getReportAnalysis(report.name)
+
                 return (
                   <div
-                    key={report.id || idx}
-                    className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-slate-900/30 border border-slate-900 rounded-2xl hover:border-slate-800/80 transition-all gap-4 animate-fade-in"
+                    key={report.id}
+                    className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                      isExpanded
+                        ? 'bg-slate-900/90 border-teal-500/40 shadow-lg'
+                        : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                    }`}
                   >
-                    {/* File info */}
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div
-                        onClick={() => openReportViewer(report)}
-                        className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-teal-400 font-bold text-xs font-mono shrink-0 cursor-pointer hover:border-teal-500/50 transition-colors"
-                        title="Click to view"
-                      >
-                        {report.type}
+                    {/* Main Card Header Row */}
+                    <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      
+                      {/* Left: Icon & Title */}
+                      <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                        <div
+                          onClick={() => openReportViewer(report)}
+                          className="w-11 h-11 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-teal-400 font-extrabold text-xs font-mono shrink-0 cursor-pointer hover:border-teal-500/50 transition-colors"
+                          title="Click to preview file"
+                        >
+                          {report.type || 'PDF'}
+                        </div>
+
+                        {isEditing ? (
+                          <div className="flex-1 flex items-center gap-2 max-w-md">
+                            <input
+                              type="text"
+                              value={editingFileNameVal}
+                              onChange={e => setEditingFileNameVal(e.target.value)}
+                              className="flex-1 bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-xl text-teal-300 font-bold focus:outline-none focus:border-teal-500"
+                            />
+                            <button
+                              onClick={() => handleSaveRename(report.id)}
+                              className="px-3 py-1.5 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingFileId(null)}
+                              className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4
+                                onClick={() => openReportViewer(report)}
+                                className="font-extrabold text-sm text-slate-100 truncate cursor-pointer hover:text-teal-400 transition-colors"
+                              >
+                                {report.name}
+                              </h4>
+                              <button
+                                onClick={() => { setEditingFileId(report.id); setEditingFileNameVal(report.name) }}
+                                className="text-slate-500 hover:text-teal-400 transition-colors text-xs"
+                                title="Rename File"
+                              >
+                                ✏️
+                              </button>
+                              <Badge variant="teal" className="text-[9px] px-2 py-0.5 font-mono">
+                                AI Extracted ✓
+                              </Badge>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1 font-mono">
+                              Patient: {profileName} · {report.date} · {report.size || '1.2 MB'}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      {isEditing ? (
-                        <div className="flex-1 flex items-center gap-2 max-w-md">
-                          <input
-                            type="text"
-                            value={editingFileNameVal}
-                            onChange={e => setEditingFileNameVal(e.target.value)}
-                            className="flex-1 bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded-lg text-teal-400 font-bold focus:outline-none focus:border-teal-500"
-                          />
-                          <Button variant="primary" size="sm" onClick={() => handleSaveRename(report.id)} className="rounded-lg py-2 px-3">
-                            Save
-                          </Button>
-                          <Button variant="secondary" size="sm" onClick={() => setEditingFileId(null)} className="rounded-lg py-2 px-3">
-                            Cancel
-                          </Button>
+                      {/* Right: Actions & Dropdown Toggle */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Report Dropdown Accordion Toggle Button */}
+                        <button
+                          onClick={() => toggleReportDropdown(report.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                            isExpanded
+                              ? 'bg-teal-500/20 text-teal-300 border-teal-500/40'
+                              : 'bg-slate-950 hover:bg-slate-800 border-slate-800 text-slate-300'
+                          }`}
+                        >
+                          <span>{isExpanded ? 'Hide Insights ▲' : 'View Insights Dropdown ▼'}</span>
+                        </button>
+
+                        <button
+                          onClick={() => openReportViewer(report)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-teal-400 font-bold text-xs transition-colors"
+                        >
+                          View PDF
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteReport(report.id, report.name)}
+                          className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold text-xs transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ── EXPANDABLE DROPDOWN DRAWER ── */}
+                    {isExpanded && (
+                      <div className="px-5 py-4 border-t border-slate-800 bg-[#080c14] space-y-4 animate-scale-up">
+                        
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-400 font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                            Extracted Clinical Findings
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">File: {report.name}</span>
                         </div>
-                      ) : (
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4
-                              onClick={() => openReportViewer(report)}
-                              className="font-semibold text-sm text-slate-200 truncate cursor-pointer hover:text-teal-400 transition-colors"
-                            >
-                              {report.name}
-                            </h4>
-                            <button
-                              onClick={() => { setEditingFileId(report.id); setEditingFileNameVal(report.name) }}
-                              className="text-slate-600 hover:text-teal-400 transition-colors text-xs"
-                              title="Rename"
-                            >
-                              ✏️
-                            </button>
-                            {hasAI && (
-                             <Badge variant="normal" className="px-1.5 py-0.5 text-[9px]">
-                                AI ✓
-                              </Badge>
-                            )}
+
+                        {/* Extracted Vitals */}
+                        {analysisData?.vitals && Object.keys(analysisData.vitals).length > 0 && (
+                          <div className="space-y-1.5">
+                            <h5 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider font-mono">
+                              Vitals Recorded:
+                            </h5>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {Object.entries(analysisData.vitals).map(([name, stat]) => (
+                                <div key={name} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-0.5">
+                                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{name}</span>
+                                  <span className="text-xs font-bold text-slate-100 font-mono">{stat.value} {stat.unit}</span>
+                                  <span className="text-[8px] font-bold text-emerald-400 block">{stat.status}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {profile?.name || 'Unknown'} · {report.date} · {report.size}
+                        )}
+
+                        {/* Extracted Lab Markers */}
+                        {analysisData?.metrics && analysisData.metrics.length > 0 && (
+                          <div className="space-y-1.5">
+                            <h5 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider font-mono">
+                              Extracted Lab Indicators:
+                            </h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {analysisData.metrics.map((m, idx) => (
+                                <div key={idx} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                                  <div>
+                                    <span className="text-xs font-bold text-slate-200">{m.name}</span>
+                                    <span className="text-[10px] text-slate-400 font-mono block">{m.value} {m.unit}</span>
+                                  </div>
+                                  <Badge variant={m.status.toLowerCase().includes('high') ? 'warning' : 'normal'} className="text-[9px]">
+                                    {m.status}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Checkup findings */}
+                        {analysisData?.checkup?.findings && (
+                          <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 space-y-1">
+                            <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider block font-mono">
+                              Doctor's Findings & Diagnosis:
+                            </span>
+                            <p className="text-xs text-teal-200 leading-relaxed font-medium">
+                              {analysisData.checkup.findings}
+                            </p>
+                          </div>
+                        )}
+
+                        {!analysisData && (
+                          <p className="text-xs text-slate-500 italic py-2">
+                            No structured clinical markers extracted yet for this report.
                           </p>
-                        </div>
-                      )}
-                    </div>
+                        )}
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => openReportViewer(report)}
-                        className="text-teal-400 hover:text-teal-350 rounded-xl py-2 px-3.5 animate-none active:scale-100"
-                      >
-                        View
-                      </Button>
-
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleDeleteReport(report.id, report.name)}
-                        className="text-rose-500 hover:text-rose-400 border border-rose-950/20 hover:border-rose-900/30 rounded-xl py-2 px-3.5 animate-none active:scale-100"
-                      >
-                        Delete
-                      </Button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -319,7 +476,7 @@ function Reports() {
         </Card>
       </div>
 
-      {/* ── Document Viewer Modal ─────────────────────────────────── */}
+      {/* ── Document Viewer Modal ── */}
       <ReportViewerModal
         viewingReport={viewingReport}
         onClose={() => setViewingReport(null)}
@@ -341,5 +498,3 @@ function Reports() {
     </div>
   )
 }
-
-export default Reports

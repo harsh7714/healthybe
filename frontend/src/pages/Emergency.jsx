@@ -98,7 +98,7 @@ function Emergency() {
       symptom: "Unconscious / Not Breathing",
       label: "CPR Protocol",
       themeColor: "rose",
-      badgeClass: "bg-rose-950/40 border-rose-900/60 text-rose-400",
+      badgeClass: "bg-rose-500/20 text-rose-300 border-rose-500/40",
       stepNumClass: "from-rose-500 to-red-600 shadow-rose-500/20",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -124,7 +124,7 @@ function Emergency() {
       symptom: "Chest Pain / Short Breath",
       label: "Heart Attack",
       themeColor: "orange",
-      badgeClass: "bg-orange-950/40 border-orange-900/60 text-orange-400",
+      badgeClass: "bg-orange-500/20 text-orange-300 border-orange-500/40",
       stepNumClass: "from-orange-500 to-amber-600 shadow-orange-500/20",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -149,7 +149,7 @@ function Emergency() {
       symptom: "Cannot Speak / Choking",
       label: "Choking Help",
       themeColor: "amber",
-      badgeClass: "bg-amber-950/40 border-amber-900/60 text-amber-400",
+      badgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
       stepNumClass: "from-amber-400 to-yellow-600 shadow-amber-500/20",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -174,7 +174,7 @@ function Emergency() {
       symptom: "Skin Blisters / Severe Burn",
       label: "Burns Protocol",
       themeColor: "violet",
-      badgeClass: "bg-violet-950/40 border-violet-900/60 text-violet-400",
+      badgeClass: "bg-violet-500/20 text-violet-300 border-violet-500/40",
       stepNumClass: "from-violet-500 to-purple-600 shadow-violet-500/20",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -198,7 +198,7 @@ function Emergency() {
       symptom: "Deformed Limb / Fracture",
       label: "Fracture spl",
       themeColor: "cyan",
-      badgeClass: "bg-cyan-950/40 border-cyan-900/60 text-cyan-400",
+      badgeClass: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40",
       stepNumClass: "from-cyan-500 to-blue-600 shadow-cyan-500/20",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -221,61 +221,97 @@ function Emergency() {
 
   const activeColor = guides[activeGuide].themeColor
 
-  // Determine borders and glows for active layout
-  let panelBorder = "border-slate-900"
-  if (activeColor === 'rose') panelBorder = "border-rose-900/40 shadow-lg shadow-rose-950/5"
-  if (activeColor === 'orange') panelBorder = "border-orange-900/40 shadow-lg shadow-orange-950/5"
-  if (activeColor === 'amber') panelBorder = "border-amber-900/40 shadow-lg shadow-amber-950/5"
-  if (activeColor === 'violet') panelBorder = "border-violet-900/40 shadow-lg shadow-violet-950/5"
-  if (activeColor === 'cyan') panelBorder = "border-cyan-900/40 shadow-lg shadow-cyan-950/5"
-
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24 relative overflow-hidden">
+    <div className="emergency-bg-root bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-28 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24 relative overflow-hidden">
       
-      {/* Background Color Gradients (Glow Effects) */}
-      <div className="absolute top-[-10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-rose-900/10 blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-teal-900/10 blur-[150px] pointer-events-none" />
-      <div className="absolute top-[40%] left-[30%] w-[500px] h-[500px] rounded-full bg-violet-900/5 blur-[120px] pointer-events-none" />
+      {/* Ambient Glow Effects */}
+      <div className="absolute top-[-10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-rose-900/15 blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-teal-900/15 blur-[150px] pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto space-y-10 relative z-10">
+      <div className="max-w-5xl mx-auto space-y-8 relative z-10">
         
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                Emergency Medical Response
+              </h1>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Immediate 112 dispatch & step-by-step first aid protocols. No login required.
+            </p>
+          </div>
 
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold font-mono uppercase tracking-wider">
+              🚨 24/7 Active Dispatch
+            </span>
+          </div>
+        </div>
 
-        {/* Primary Call Action Banner */}
+        {/* Primary Call Action Banner with Rotating Red & Blue Ambulance Light */}
         <button 
           onClick={() => handleDial("112")}
-          className="w-full p-6 rounded-3xl bg-gradient-to-r from-rose-600 via-red-500 to-orange-500 hover:from-rose-500 hover:to-orange-400 text-black flex flex-col sm:flex-row sm:items-center sm:justify-between items-start transition-all duration-300 shadow-xl shadow-rose-500/10 active:scale-[0.99] text-left gap-4 group"
+          className="w-full p-6 rounded-3xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between items-start transition-all duration-300 shadow-2xl shadow-rose-600/30 active:scale-[0.99] text-left gap-4 group cursor-pointer relative overflow-hidden"
         >
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-black/10 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-              <span className="text-3xl">🚨</span>
+          {/* Animated Ambient Red & Blue Light Beams */}
+          <div className="absolute -top-12 -left-12 w-40 h-40 bg-red-500/40 rounded-full blur-2xl siren-red-glow pointer-events-none" />
+          <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-blue-500/40 rounded-full blur-2xl siren-blue-glow pointer-events-none" />
+
+          <div className="flex items-center gap-4 relative z-10">
+            
+            {/* Rotating Ambulance Siren Light Widget */}
+            <div className="relative w-14 h-14 rounded-2xl bg-black/40 border border-white/20 flex items-center justify-center shrink-0 shadow-2xl group-hover:scale-110 transition-transform overflow-hidden">
+              
+              {/* 360 degree Rotating Lens Flare Beam Rays */}
+              <div className="absolute inset-0 siren-beacon-spin flex items-center justify-center pointer-events-none">
+                <div className="w-full h-2 bg-gradient-to-r from-red-500 via-transparent to-blue-500 blur-[1px] opacity-90" />
+                <div className="w-2 h-full bg-gradient-to-b from-blue-500 via-transparent to-red-500 blur-[1px] opacity-90" />
+              </div>
+
+              {/* Pulsing Core Siren Orb */}
+              <div className="relative z-10 w-7 h-7 rounded-full bg-gradient-to-tr from-rose-500 to-blue-500 flex items-center justify-center text-white text-xs shadow-[0_0_15px_rgba(239,68,68,0.9)]">
+                🚨
+              </div>
             </div>
+
             <div>
-              <h3 className="text-2xl font-black leading-none text-slate-950">DIAL PRIMARY EMERGENCY</h3>
-              <p className="text-xs font-bold mt-1 text-slate-900">Ambulance, Fire, Police & Critical Services Dispatch (112)</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl sm:text-2xl font-black leading-none text-white tracking-tight">
+                  DIAL PRIMARY EMERGENCY (112)
+                </h3>
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-400 siren-blue-glow" />
+              </div>
+              <p className="text-xs font-bold mt-1 text-slate-100">
+                Ambulance, Fire, Police & Critical Services Dispatch (Live Siren Response)
+              </p>
             </div>
           </div>
-          <span className="px-5 py-3 bg-black hover:bg-slate-900 text-rose-400 font-extrabold text-xs rounded-xl shadow-lg uppercase tracking-wider shrink-0 self-start sm:sm-auto transition-colors">
-            CALL 112 NOW
+
+          <span className="px-6 py-3 bg-slate-950 hover:bg-black text-rose-400 font-black text-xs rounded-2xl shadow-xl uppercase tracking-widest shrink-0 self-start sm:self-auto transition-all border border-rose-500/40 relative z-10 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 siren-red-glow" />
+            <span>CALL 112 NOW</span>
           </span>
         </button>
 
-        {/* Dynamic Color-Coded Helpline Grid */}
+        {/* Helpline Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "AMBULANCE", num: "108", color: "from-red-500/25 to-rose-600/5 border-red-500/30 text-red-400", shadow: "shadow-red-500/5" },
-            { label: "POISON CONTROL", num: "1800-11-6117", color: "from-amber-500/25 to-yellow-600/5 border-amber-500/30 text-amber-400", shadow: "shadow-amber-500/5" },
-            { label: "RED CROSS BLOOD", num: "1097", color: "from-cyan-500/25 to-blue-600/5 border-cyan-500/30 text-cyan-400", shadow: "shadow-cyan-500/5" },
-            { label: "POLICE RESPONSE", num: "100", color: "from-violet-500/25 to-indigo-600/5 border-violet-500/30 text-violet-400", shadow: "shadow-violet-500/5" }
+            { label: "AMBULANCE", num: "108", color: "from-rose-500/20 to-red-600/10 border-rose-500/30 text-rose-400" },
+            { label: "POISON CONTROL", num: "1800-11-6117", color: "from-amber-500/20 to-yellow-600/10 border-amber-500/30 text-amber-400" },
+            { label: "RED CROSS BLOOD", num: "1097", color: "from-cyan-500/20 to-blue-600/10 border-cyan-500/30 text-cyan-400" },
+            { label: "POLICE RESPONSE", num: "100", color: "from-violet-500/20 to-indigo-600/10 border-violet-500/30 text-violet-400" }
           ].map((h, idx) => (
             <button 
               key={idx}
               onClick={() => handleDial(h.num)}
-              className={`p-4 bg-gradient-to-tr ${h.color} border hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-2xl text-left flex flex-col justify-between h-full min-h-[96px] shadow-md ${h.shadow}`}
+              className={`p-4 bg-slate-900/80 border ${h.color} hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-2xl text-left flex flex-col justify-between h-full min-h-[96px] shadow-md cursor-pointer`}
             >
               <div className="flex justify-between items-start w-full gap-2">
-                <span className="text-[9px] font-black tracking-widest uppercase opacity-75">{h.label}</span>
-                <span className="text-sm shrink-0 opacity-80">📞</span>
+                <span className="text-[9px] font-black tracking-widest uppercase text-slate-400 font-mono">{h.label}</span>
+                <span className="text-sm shrink-0">📞</span>
               </div>
               <div className="mt-2 w-full">
                 <p className="text-sm sm:text-base font-black tracking-tight break-all font-mono leading-tight">{h.num}</p>
@@ -284,40 +320,43 @@ function Emergency() {
           ))}
         </div>
 
-        {/* Visually Impressive Symptom Cards Grid (Horizontal Layout to Prevent Text Overlaps) */}
-        <div className="space-y-4 pt-2">
-          <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">TAP SYMPTOM FOR IMMEDIATE MEDICAL PROTOCOL</h4>
+        {/* Symptom Cards Grid */}
+        <div className="space-y-3 pt-2">
+          <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono">
+            SELECT SYMPTOM FOR IMMEDIATE PROTOCOL
+          </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.keys(guides).map((key) => {
               const isActive = activeGuide === key
               const color = guides[key].themeColor
               
-              let themeClasses = ""
+              let activeBorder = "border-slate-800"
               if (isActive) {
-                themeClasses = `emergency-card-${color} active`
+                if (color === 'rose') activeBorder = "border-rose-500 bg-rose-500/10 text-rose-300"
+                if (color === 'orange') activeBorder = "border-orange-500 bg-orange-500/10 text-orange-300"
+                if (color === 'amber') activeBorder = "border-amber-500 bg-amber-500/10 text-amber-300"
+                if (color === 'violet') activeBorder = "border-violet-500 bg-violet-500/10 text-violet-300"
+                if (color === 'cyan') activeBorder = "border-cyan-500 bg-cyan-500/10 text-cyan-300"
               } else {
-                themeClasses = "bg-slate-950/50 border-slate-900/80 hover:border-slate-800/80 hover:bg-slate-900/40 text-slate-400"
+                activeBorder = "bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400"
               }
-
-              // Horizontal Flex Card layout with standard p-4 sm:p-5
-              const cardClass = `p-4 sm:p-5 rounded-2xl border flex items-center gap-4 transition-all duration-300 cursor-pointer shadow-md active:scale-[0.98] ${themeClasses}`
 
               return (
                 <div 
                   key={key}
                   onClick={() => setActiveGuide(key)}
-                  className={cardClass}
+                  className={`p-4 sm:p-5 rounded-2xl border flex items-center gap-4 transition-all duration-200 cursor-pointer shadow-md active:scale-[0.98] ${activeBorder}`}
                 >
-                  <div className={`p-3 rounded-xl border transition-colors duration-300 shrink-0 ${
+                  <div className={`p-3 rounded-xl border shrink-0 ${
                     isActive 
-                      ? 'bg-black/40 border-slate-700/50 text-white' 
-                      : 'bg-slate-900/80 border-slate-850 text-slate-500'
+                      ? 'bg-slate-950 border-slate-700 text-teal-400' 
+                      : 'bg-slate-950 border-slate-850 text-slate-500'
                   }`}>
                     {guides[key].icon}
                   </div>
 
                   <div className="space-y-0.5 min-w-0 flex-1">
-                    <h5 className="text-[10px] font-bold uppercase tracking-wider opacity-60 truncate">
+                    <h5 className="text-[10px] font-bold uppercase tracking-wider font-mono opacity-80">
                       {guides[key].label}
                     </h5>
                     <h4 className="text-xs sm:text-sm font-extrabold leading-snug break-words">
@@ -332,67 +371,59 @@ function Emergency() {
 
         {/* Protocol Instruction Panel */}
         {guides[activeGuide] && (
-          <div className={`bg-slate-950 border ${panelBorder} rounded-3xl p-4 sm:p-6 md:p-8 space-y-6 shadow-2xl relative overflow-hidden transition-all duration-500`}>
+          <div className="emergency-protocol-panel bg-[#0c1220] border border-slate-800 rounded-3xl p-5 sm:p-7 md:p-8 space-y-6 shadow-2xl relative overflow-hidden transition-all duration-300">
             
-            {/* Header */}
-            <div className="flex justify-between items-center pb-4 border-b border-slate-900">
+            {/* Protocol Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
               <div>
-                <span className="text-[9px] uppercase font-extrabold text-slate-500 tracking-wider">PROTOCOL SUMMARY</span>
-                <h2 className="text-xl sm:text-2xl font-black mt-0.5">{guides[activeGuide].title}</h2>
+                <span className="text-[9px] uppercase font-extrabold text-teal-400 tracking-wider font-mono">
+                  CRITICAL FIRST AID PROTOCOL
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black mt-0.5 text-slate-100">{guides[activeGuide].title}</h2>
               </div>
-              <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${guides[activeGuide].badgeClass} animate-pulse`}>
-                CRITICAL PROTOCOL
+              <span className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border font-mono ${guides[activeGuide].badgeClass} animate-pulse shrink-0 self-start sm:self-auto`}>
+                CRITICAL INSTRUCTION
               </span>
             </div>
 
-            {/* DO NOT Alerts */}
-            <div className="p-5 bg-rose-500/10 border border-rose-500/30 rounded-2xl shadow-[0_0_15px_-4px_rgba(239,68,68,0.2)]">
-              <h4 className="text-xs font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 mb-3">
-                <span>⚠️</span> CRITICAL RED LINES
+            {/* DO NOT Red Lines Box */}
+            <div className="emergency-do-not-box p-5 bg-rose-500/10 border border-rose-500/30 rounded-2xl">
+              <h4 className="text-xs font-black text-rose-400 uppercase tracking-widest flex items-center gap-2 mb-2 font-mono">
+                <span>⚠️</span> CRITICAL RED LINES (WHAT NOT TO DO)
               </h4>
-              <ul className="list-disc pl-5 text-xs font-semibold space-y-2 leading-relaxed">
+              <ul className="list-disc pl-5 text-xs font-bold space-y-1.5 leading-relaxed text-rose-300">
                 {guides[activeGuide].doNot.map((w, i) => (
-                  <li key={i} className="pl-1 text-rose-700 dark:text-rose-300">{w}</li>
+                  <li key={i}>{w}</li>
                 ))}
               </ul>
             </div>
 
-            {/* Action Steps Grid (Upgraded visually with Color-Coded Borders, Icons, & Standard gap-5) */}
+            {/* Step-by-Step Procedure Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {guides[activeGuide].steps.map((step, idx) => {
-                let stepClass = `emergency-step-${activeColor}`
-                let iconColor = "text-slate-400"
-                if (activeColor === 'rose') iconColor = "text-rose-400"
-                if (activeColor === 'orange') iconColor = "text-orange-400"
-                if (activeColor === 'amber') iconColor = "text-amber-400"
-                if (activeColor === 'violet') iconColor = "text-violet-400"
-                if (activeColor === 'cyan') iconColor = "text-cyan-400"
-
-                return (
-                  <div 
-                    key={idx} 
-                    className={`p-5 border rounded-2xl flex gap-5 items-start transition-all duration-300 shadow-sm ${stepClass}`}
-                  >
-                    <div className={`p-2.5 rounded-xl bg-slate-950 border border-slate-850 ${iconColor} shrink-0 shadow-inner`}>
-                      {getStepIcon(step.icon)}
-                    </div>
-                    
-                    <div className="space-y-1.5 min-w-0 flex-1">
-                      <div>
-                        <span className={`text-[10px] font-black uppercase tracking-wider ${iconColor}`}>
-                          Step {idx + 1}: {step.action}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 dark:text-slate-300 leading-relaxed font-medium">{step.details}</p>
-                    </div>
+              {guides[activeGuide].steps.map((step, idx) => (
+                <div 
+                  key={idx} 
+                  className="emergency-step-card p-4 rounded-2xl bg-slate-900 border border-slate-800 flex gap-4 items-start shadow-sm"
+                >
+                  <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-teal-400 shrink-0">
+                    {getStepIcon(step.icon)}
                   </div>
-                )
-              })}
+                  
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-400 font-mono block">
+                      Step {idx + 1}: {step.action}
+                    </span>
+                    <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                      {step.details}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            {/* Disclaimer details */}
-            <div className="pt-6 border-t border-slate-900 text-[10px] text-slate-600 text-center leading-normal">
-              Disclaimer: These first aid guides serve as general guidelines and cannot replace professional emergency care. Call 112 immediately.
+            {/* Medical Disclaimer */}
+            <div className="pt-4 border-t border-slate-800 text-[10px] text-slate-500 text-center font-mono">
+              Disclaimer: First aid guidelines do not replace professional paramedic care. Call 112 immediately.
             </div>
 
           </div>

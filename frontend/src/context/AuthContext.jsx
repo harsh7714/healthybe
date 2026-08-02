@@ -44,6 +44,41 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const loginWithGoogle = async (googleUser) => {
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+    const res = await fetch(`${apiBase}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: googleUser.email,
+        name: googleUser.name,
+        picture: googleUser.picture,
+        googleId: googleUser.sub || googleUser.id
+      })
+    })
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      throw new Error(errData.error || `Google authentication failed with status ${res.status}`)
+    }
+
+    const data = await res.json()
+    const finalEmail = data.user.email
+    const finalName = data.user.name
+    const finalPicture = data.user.profileImageUrl
+
+    setUserEmail(finalEmail)
+    setIsLoggedIn(true)
+    setUserDisplayName(finalName || '')
+    localStorage.setItem('user_email', finalEmail)
+    localStorage.setItem('user_display_name', finalName || '')
+    if (finalPicture) {
+      localStorage.setItem('user_profile_image', finalPicture)
+    }
+
+    return data
+  }
+
   const logoutUser = () => {
     setUserEmail('')
     setIsLoggedIn(false)
@@ -151,6 +186,7 @@ export function AuthProvider({ children }) {
       isLoggedIn,
       userDisplayName,
       loginUser,
+      loginWithGoogle,
       logoutUser,
       sendOtp,
       verifyOtp,

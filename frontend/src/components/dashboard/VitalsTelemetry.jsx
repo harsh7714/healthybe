@@ -1,64 +1,55 @@
 import React from 'react'
 import { Card, CardHeader } from '../ui/Card'
 import { Badge } from '../ui/Badge'
+import { useTranslation } from '../../utils/translationService'
 
-function VitalsTelemetry({ vitals, selectedProfile, t }) {
+function VitalsTelemetry({ vitals = {}, isAll, selectedProfile, t: propT }) {
+  const { t: hookT } = useTranslation()
+  const t = typeof propT === 'function' ? propT : hookT
+
+  const isAllView = isAll !== undefined ? isAll : selectedProfile === 'all'
+
   return (
-    <Card className="p-6 space-y-6 bg-slate-950/40">
+    <Card className="p-6 space-y-6 bg-[#0c1220] border border-slate-800/80">
       <CardHeader>
-        <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">
-          {t('dashboard.vitalsTitle')}
-        </h3>
-        <span className="text-[10px] text-slate-500 font-mono">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-teal-500/10 border border-teal-500/15">
+            <svg className="w-3.5 h-3.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h3 className="font-bold text-sm text-white" style={{ fontFamily: 'var(--font-display)' }}>
+            {t('dashboard.vitalsTitle')}
+          </h3>
+        </div>
+        <span className="text-[10px] text-slate-400 font-mono">
           {t('dashboard.vitalsSubtitle')}
         </span>
       </CardHeader>
 
-      {selectedProfile === 'all' ? (
-        // Combined family vitals listing
+      {isAllView ? (
         <div className="space-y-6">
           {Object.keys(vitals).length === 0 ? (
-            <p className="text-xs text-slate-555 italic py-4">{t('dashboard.noVitals')}</p>
+            <p className="text-xs text-slate-500 italic py-4">{t('dashboard.noVitals')}</p>
           ) : (
             Object.values(vitals).map((v, idx) => (
               <div
                 key={idx}
-                className="p-5 bg-gradient-to-tr from-slate-900/40 to-slate-900/10 border border-slate-900 rounded-2xl space-y-4 shadow-sm hover:border-slate-800 transition-colors"
+                className="p-5 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4 hover:border-slate-700 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-850 text-teal-400 font-bold text-xs flex items-center justify-center font-mono shadow-sm overflow-hidden">
+                  <div className="w-7 h-7 rounded-full bg-teal-500/15 border border-teal-500/20 text-teal-400 font-bold text-xs flex items-center justify-center overflow-hidden flex-shrink-0">
                     {v.profileImageUrl ? (
                       <img src={v.profileImageUrl} alt={v.memberName} className="w-full h-full object-cover" />
                     ) : (
                       v.initials
                     )}
                   </div>
-                  <span className="text-xs font-bold text-slate-200 tracking-wide">{v.memberName}</span>
+                  <span className="text-xs font-bold text-slate-200">{v.memberName}</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {Object.entries(v.stats).map(([name, stat], sIdx) => (
-                    <div
-                      key={sIdx}
-                      className="p-3.5 bg-black/20 border border-slate-900 rounded-xl group hover:border-slate-850 transition-all"
-                    >
-                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">{name}</p>
-                      <p className="text-base font-black mt-1.5 text-slate-200 font-mono">
-                        {stat.value} <span className="text-[10px] text-slate-500 font-normal">{stat.unit}</span>
-                      </p>
-                      <Badge
-                        variant={
-                          stat.status.toLowerCase().includes('borderline')
-                            ? 'borderline'
-                            : stat.status.toLowerCase().includes('high') ||
-                              stat.status.toLowerCase().includes('critical')
-                            ? 'critical'
-                            : 'normal'
-                        }
-                        className="mt-2 text-[8px]"
-                      >
-                        {stat.status}
-                      </Badge>
-                    </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {v.stats && Object.entries(v.stats).map(([name, stat], sIdx) => (
+                    <VitalCard key={sIdx} name={name} stat={stat} />
                   ))}
                 </div>
               </div>
@@ -66,50 +57,48 @@ function VitalsTelemetry({ vitals, selectedProfile, t }) {
           )}
         </div>
       ) : (
-        // Individual vitals layout
         <div>
           {Object.keys(vitals).length === 0 ? (
             <div className="py-10 text-center space-y-3">
-              <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto">
-                <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto">
+                <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
               <p className="text-xs text-slate-500 italic">{t('dashboard.noVitals')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {Object.entries(vitals).map(([name, stat], idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/30 border border-slate-855 hover:border-slate-800/80 transition-all duration-300 shadow-md group hover:-translate-y-0.5"
-                >
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{name}</p>
-                  <div className="flex items-baseline gap-1.5 mt-2.5">
-                    <span className="text-2xl font-black text-slate-200 tracking-tight font-mono">{stat.value}</span>
-                    <span className="text-[10px] text-slate-500 font-mono font-medium">{stat.unit}</span>
-                  </div>
-                  <Badge
-                    variant={
-                      stat.status.toLowerCase().includes('borderline') ||
-                      stat.status.toLowerCase().includes('pre-diabetic')
-                        ? 'borderline'
-                        : stat.status.toLowerCase().includes('high') ||
-                          stat.status.toLowerCase().includes('critical')
-                        ? 'critical'
-                        : 'normal'
-                    }
-                    className="mt-3"
-                  >
-                    {stat.status}
-                  </Badge>
-                </div>
+                <VitalCard key={idx} name={name} stat={stat} />
               ))}
             </div>
           )}
         </div>
       )}
     </Card>
+  )
+}
+
+function VitalCard({ name, stat }) {
+  const isOptimal = stat.status === 'optimal' || stat.status === 'Normal' || !stat.status
+  return (
+    <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl space-y-1.5 hover:border-teal-500/30 transition-colors">
+      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block font-mono">
+        {name}
+      </span>
+      <div className="flex items-baseline justify-between gap-1">
+        <span className="text-sm font-extrabold text-slate-100 font-mono">
+          {stat.value || stat}
+        </span>
+        {stat.unit && <span className="text-[10px] text-slate-500 font-mono">{stat.unit}</span>}
+      </div>
+      {stat.status && (
+        <Badge variant={isOptimal ? 'emerald' : 'rose'} className="text-[8px] font-mono px-1.5 py-0.5">
+          {stat.status}
+        </Badge>
+      )}
+    </div>
   )
 }
 

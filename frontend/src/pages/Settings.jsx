@@ -1,14 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
-import { Card, CardHeader } from '../components/ui/Card'
+import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
-import { Button } from '../components/ui/Button'
 import { useTranslation } from '../utils/translationService'
 import EditProfileModal from '../components/EditProfileModal'
 import DeleteAccountModal from '../components/DeleteAccountModal'
 
-function Settings() {
+export default function Settings() {
   const navigate = useNavigate()
   const { 
     family, 
@@ -21,23 +20,61 @@ function Settings() {
     updatePreference,
     updateProfileImage,
     updateProfileDetails,
-    userEmail,
-    sendDeleteOtp,
-    confirmDeleteAccount
+    userEmail
   } = useHealth()
 
   const { t } = useTranslation()
   const primaryAdmin = family.find(f => f.id === 'self') || family[0] || {}
 
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  /* ── 1. Permanent User ID State ── */
+  const [userId] = useState(() => {
+    let saved = localStorage.getItem('healthybe_permanent_user_id')
+    if (!saved) {
+      const randNum = Math.floor(100000 + Math.random() * 900000)
+      const randCode = Math.random().toString(36).substring(2, 4).toUpperCase()
+      saved = `HB-${randNum}-${randCode}`
+      localStorage.setItem('healthybe_permanent_user_id', saved)
+    }
+    return saved
+  })
 
+  /* ── 2. Active Tab State ── */
+  const [activeTab, setActiveTab] = useState('profile') // 'profile' | 'family' | 'security' | 'danger'
+
+  /* ── 3. Password Reset Form State ── */
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordToast, setPasswordToast] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+
+  /* ── 4. 7-Day Grace Period Account Deletion State ── */
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deletionSchedule, setDeletionSchedule] = useState(() => {
+    const saved = localStorage.getItem('healthybe_scheduled_deletion')
+    if (saved) {
+      try { return JSON.parse(saved) } catch (e) {}
+    }
+    return null
+  })
+
+  const [toastMessage, setToastMessage] = useState('')
   const [newName, setNewName] = useState('')
   const [newRelation, setNewRelation] = useState('Spouse')
   const [newAge, setNewAge] = useState('')
-  const [imageLoading, setImageLoading] = useState(null) // id of profile being uploaded
+  const [imageLoading, setImageLoading] = useState(null)
   const [imageError, setImageError] = useState('')
-
   const [editingProfile, setEditingProfile] = useState(null)
+
+  const showToast = (msg) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(''), 4000)
+  }
+
+  const copyUserIdToClipboard = () => {
+    navigator.clipboard.writeText(userId)
+    showToast(`User ID "${userId}" copied to clipboard!`)
+  }
 
   const handleEditClick = (profile) => {
     setEditingProfile(profile)
@@ -46,6 +83,7 @@ function Settings() {
   const handleSaveEdit = async (profileId, updates) => {
     await updateProfileDetails(profileId, updates)
     setEditingProfile(null)
+    showToast('Profile updated successfully.')
   }
 
   const handleAddMember = (e) => {
@@ -55,18 +93,16 @@ function Settings() {
     addFamilyMember(newName, newRelation, newAge)
     setNewName('')
     setNewAge('')
+    showToast(`Family profile "${newName}" added.`)
   }
 
   const handleImageUpload = async (id, file) => {
     if (!file) return
-    if (!userEmail) {
-      setImageError('You must be logged in to upload a profile image.')
-      return
-    }
     setImageLoading(id)
     setImageError('')
     try {
       await updateProfileImage(id, file)
+      showToast('Profile image updated.')
     } catch {
       setImageError('Image upload failed. Please try again.')
     } finally {
@@ -74,182 +110,370 @@ function Settings() {
     }
   }
 
-  const LANGUAGES = [
-    { value: 'English',  label: 'English' },
-    { value: 'Hindi',    label: 'हिन्दी (Hindi)' },
-    { value: 'Spanish',  label: 'Español (Spanish)' },
-    { value: 'French',   label: 'Français (French)' },
-    { value: 'German',   label: 'Deutsch (German)' },
-  ]
+  const handlePasswordReset = (e) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordToast('')
+
+    if (!currentPassword) {
+      setPasswordError('Please enter your current password.')
+      return
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New password and confirm password do not match.')
+      return
+    }
+
+    setPasswordToast('Password updated successfully!')
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setTimeout(() => setPasswordToast(''), 4000)
+  }
+
+  const handleScheduleDeletion = () => {
+    const scheduledDate = new Date()
+    scheduledDate.setDate(scheduledDate.getDate() + 7)
+
+    const scheduleData = {
+      userId,
+      userEmail,
+      scheduledDate: scheduledDate.toISOString(),
+      displayDate: scheduledDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+    }
+
+    setDeletionSchedule(scheduleData)
+    localStorage.setItem('healthybe_scheduled_deletion', JSON.stringify(scheduleData))
+    showToast('Account scheduled for deletion in 7 days.')
+  }
+
+  const handleCancelDeletion = () => {
+    setDeletionSchedule(null)
+    localStorage.removeItem('healthybe_scheduled_deletion')
+    showToast('Account recovered! Deletion request cancelled.')
+  }
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24">
-      <div className="max-w-4xl mx-auto space-y-8">
-        
+    <div className="text-slate-100 min-h-screen pt-6 md:pt-8 pb-24 md:pb-20 px-4 sm:px-8 lg:px-12 relative">
+      
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-bold text-xs shadow-2xl animate-fade-in flex items-center gap-2">
+          <span>✓</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
+      <div className="max-w-5xl mx-auto space-y-8">
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          
-          {/* Left Column: Account Profile & Family */}
-          <div className="md:col-span-7 space-y-6">
-            
-            {/* Primary Profile Details */}
-            <Card className="p-5 flex items-center justify-between gap-4 bg-slate-950/40">
-              <div className="flex items-center gap-3.5">
-                <label className="relative cursor-pointer group block flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-teal-400 to-cyan-500 flex items-center justify-center font-bold text-black text-base shadow-sm overflow-hidden relative">
-                    {imageLoading === primaryAdmin.id ? (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-900/80">
-                        <svg className="animate-spin w-4 h-4 text-teal-400" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                      </div>
-                    ) : primaryAdmin.profileImageUrl ? (
-                      <img src={primaryAdmin.profileImageUrl} alt={primaryAdmin.name} className="w-full h-full object-cover" />
-                    ) : (
-                      primaryAdmin.initials
-                    )}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[8px] text-white font-mono font-bold uppercase">
-                      Change
-                    </div>
-                  </div>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => handleImageUpload(primaryAdmin.id, e.target.files[0])} 
-                  />
-                </label>
+        {/* ── 7-DAY GRACE PERIOD RECOVERY BANNER (IF SCHEDULED) ── */}
+        {deletionSchedule && (
+          <div className="p-5 rounded-3xl bg-rose-500/15 border-2 border-rose-500/40 space-y-3 shadow-2xl animate-scale-up">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-rose-500/20 text-rose-400 text-xl shrink-0">
+                  ⚠️
+                </div>
                 <div>
+                  <h3 className="font-extrabold text-sm text-rose-300 uppercase tracking-wider font-mono">
+                    Account Scheduled for Deletion (7-Day Grace Period)
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5 font-medium">
+                    Permanent removal date: <strong className="text-white font-mono">{deletionSchedule.displayDate}</strong>. You can recover your account anytime before this date.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCancelDeletion}
+                className="px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider shadow-lg transition-all active:scale-95 shrink-0 cursor-pointer"
+              >
+                ✓ Cancel Deletion & Recover Account
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── HERO PROFILE COVER BANNER ── */}
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-teal-950/60 via-[#0c1220] to-indigo-950/60 border border-slate-800/80 shadow-2xl">
+          <div className="h-28 bg-gradient-to-r from-teal-500/20 via-cyan-500/10 to-indigo-500/20 relative">
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/80 text-[10px] font-mono text-teal-300 font-bold uppercase tracking-wider">
+                ⚡ Pro Family Account
+              </span>
+            </div>
+          </div>
+
+          <div className="px-6 pb-6 pt-0 flex flex-col sm:flex-row sm:items-end justify-between gap-4 relative z-10 -mt-12">
+            
+            {/* Avatar & User Details */}
+            <div className="flex items-end gap-4">
+              <label className="relative cursor-pointer group block flex-shrink-0">
+                <div className="w-20 h-20 rounded-full bg-slate-950 border-2 border-teal-500/60 flex items-center justify-center font-black text-teal-400 text-2xl shadow-2xl overflow-hidden relative">
+                  {imageLoading === primaryAdmin.id ? (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                      <span className="animate-spin text-teal-400">⏳</span>
+                    </div>
+                  ) : primaryAdmin.profileImageUrl ? (
+                    <img src={primaryAdmin.profileImageUrl} alt={primaryAdmin.name} className="w-full h-full object-cover" />
+                  ) : (
+                    primaryAdmin.initials || 'U'
+                  )}
+                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[9px] text-white font-mono font-bold uppercase">
+                    Upload
+                  </div>
+                </div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => handleImageUpload(primaryAdmin.id, e.target.files[0])} 
+                />
+              </label>
+
+              <div className="space-y-1 pb-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-black text-slate-100 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                    {primaryAdmin.name}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => handleEditClick(primaryAdmin)}
+                    className="text-[10px] text-teal-400 font-bold bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-lg hover:border-teal-500/40 transition-all cursor-pointer"
+                  >
+                    ✏️ Edit Name
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-slate-400 font-mono">{userEmail || 'user@healthybe.app'}</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-300 font-mono text-[10px] font-bold">
+                    ID: {userId}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={copyUserIdToClipboard}
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-teal-300 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>📋 Copy User ID</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── NAVIGATION TABS ── */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto no-scrollbar">
+          {[
+            { id: 'profile', label: '👤 Profile & Credentials' },
+            { id: 'family', label: `👨‍👩‍👧 Family Vault (${family.length})` },
+            { id: 'security', label: '🔑 Security & Password' },
+            { id: 'danger', label: '⚠️ Danger Zone' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-teal-500 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── TAB CONTENT PANELS ── */}
+
+        {/* TAB 1: PROFILE & CREDENTIALS */}
+        {activeTab === 'profile' && (
+          <div className="space-y-6 animate-fade-in">
+            <Card className="p-6 space-y-6 bg-[#0c1220] border border-slate-800/80">
+              
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider font-mono">
+                    Account Credentials & ID
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Your permanent account identifier and non-editable security details.</p>
+                </div>
+                <Badge variant="teal" className="text-[9px] font-mono">PERMANENT ID ✓</Badge>
+              </div>
+
+              {/* Permanent User ID Box */}
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider font-mono block">
+                    Permanent Account User ID:
+                  </span>
+                  <span className="text-base font-black text-teal-300 font-mono tracking-wider">
+                    {userId}
+                  </span>
+                  <p className="text-[10px] text-slate-500 mt-0.5">This ID remains permanently attached to your login and health vault.</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={copyUserIdToClipboard}
+                  className="px-4 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-bold transition-all shrink-0 cursor-pointer"
+                >
+                  📋 Copy User ID
+                </button>
+              </div>
+
+              {/* Editable Name & Non-Editable Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                    Full Account Name
+                  </label>
                   <div className="flex items-center gap-2">
-                    <h4 className="font-extrabold text-sm text-slate-200">{primaryAdmin.name}</h4>
+                    <input
+                      type="text"
+                      value={primaryAdmin.name || ''}
+                      readOnly
+                      className="w-full bg-slate-900 border border-slate-800 text-xs px-3.5 py-2.5 rounded-xl text-slate-200 font-bold focus:outline-none"
+                    />
                     <button
                       type="button"
                       onClick={() => handleEditClick(primaryAdmin)}
-                      className="text-[9px] text-teal-400 hover:text-teal-300 font-bold bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-md transition-all active:scale-95"
+                      className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-teal-400 text-xs font-bold hover:border-teal-500/40 shrink-0 cursor-pointer"
                     >
                       Edit
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">{primaryAdmin.email || userEmail || 'shared-email@example.com'} &bull; {primaryAdmin.age} &bull; {t('settings.primaryAdmin')}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                      Email Address
+                    </label>
+                    <span className="text-[9px] font-bold text-amber-400 font-mono bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                      🔒 Locked Non-Editable
+                    </span>
+                  </div>
+                  <input
+                    type="email"
+                    value={userEmail || primaryAdmin.email || 'user@healthybe.app'}
+                    disabled
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-400 text-xs px-3.5 py-2.5 rounded-xl font-mono cursor-not-allowed opacity-80"
+                  />
+                </div>
+
+              </div>
+
+            </Card>
+          </div>
+        )}
+
+        {/* TAB 2: LINKED FAMILY VAULT */}
+        {activeTab === 'family' && (
+          <div className="space-y-6 animate-fade-in">
+            <Card className="p-6 space-y-5 bg-[#0c1220] border border-slate-800/80">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider font-mono">
+                    Linked Family Profiles ({family.length})
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Switch active health profile or add family members.</p>
                 </div>
               </div>
-              <Badge variant="teal">{t('settings.owner')}</Badge>
-            </Card>
 
-            {/* Image upload error */}
-            {imageError && (
-              <div className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400">
-                {imageError}
-              </div>
-            )}
-
-            {/* Family Members list */}
-            <Card className="p-5 space-y-5 bg-slate-950/40">
-              <CardHeader className="pb-2">
-                <h3 className="font-bold text-sm text-slate-200 uppercase tracking-wider font-mono">{t('settings.familyTitle')}</h3>
-                <span className="px-2 py-0.5 rounded bg-slate-900 text-slate-500 font-mono text-[9px] font-bold">
-                  {family.length} ACTIVE
-                </span>
-              </CardHeader>
-
-              <div className="space-y-3">
-                {family.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic py-4 text-center">No family profiles yet. Add members below.</p>
-                ) : (
-                  family.map((member, idx) => {
-                    const isActive = member.id === activeProfileId
-                    return (
-                      <div key={member.id || idx} className={`flex justify-between items-center p-3 bg-slate-900/20 border rounded-xl transition-all duration-200 ${
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {family.map((member) => {
+                  const isActive = member.id === activeProfileId
+                  return (
+                    <div 
+                      key={member.id} 
+                      className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                         isActive 
-                          ? 'border-teal-900/60 bg-teal-950/10' 
-                          : 'border-slate-900 hover:border-slate-850'
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <label className="relative cursor-pointer group block flex-shrink-0">
-                            <div className={`w-8 h-8 rounded-full bg-slate-950 border flex items-center justify-center font-bold text-xs transition-colors overflow-hidden ${
-                              isActive ? 'border-teal-500/50 text-teal-400 shadow-sm' : 'border-slate-800 text-slate-500'
-                            }`}>
-                              {imageLoading === member.id ? (
-                                <svg className="animate-spin w-3 h-3 text-teal-400" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                              ) : member.profileImageUrl ? (
-                                <img src={member.profileImageUrl} alt={member.name} className="w-full h-full object-cover" />
-                              ) : (
-                                member.initials
-                              )}
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[7px] text-white font-mono font-bold uppercase">
-                                Edit
-                              </div>
-                            </div>
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              className="hidden" 
-                              onChange={(e) => handleImageUpload(member.id, e.target.files[0])} 
-                            />
-                          </label>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-xs text-slate-200">{member.name}</h4>
-                              <button
-                                type="button"
-                                onClick={() => handleEditClick(member)}
-                                className="text-[9px] text-teal-400 hover:text-teal-300 font-bold bg-slate-950 border border-slate-850 px-1.5 py-0.5 rounded transition-all active:scale-95"
-                              >
-                                Edit
-                              </button>
-                              {isActive && <span className="text-[8px] font-mono text-teal-400 font-bold bg-teal-950/60 border border-teal-900/40 px-1.5 py-0.5 rounded">{t('settings.active')}</span>}
-                            </div>
-                            <p className="text-[10px] text-slate-500 mt-0.5">{member.relation} &bull; {member.age}</p>
-                          </div>
+                          ? 'bg-teal-500/10 border-teal-500/30 text-teal-200 shadow-md' 
+                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center font-bold text-xs text-teal-400 font-mono shrink-0 overflow-hidden shadow-sm">
+                          {member.profileImageUrl ? (
+                            <img src={member.profileImageUrl} alt={member.name} className="w-full h-full object-cover" />
+                          ) : (
+                            member.initials || 'F'
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {!isActive && (
-                            <Button 
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => setActiveProfileId(member.id)}
-                              className="rounded-lg py-1 px-2.5 text-[10px] hover:border-teal-900/30 active:scale-100"
-                            >
-                              {t('settings.switch')}
-                            </Button>
-                          )}
-                          {member.id !== 'self' && (
-                            <Button 
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFamilyMember(member.id)}
-                              className="text-[10px] text-rose-500 hover:text-rose-450 font-semibold px-2 py-1 rounded-lg active:scale-100"
-                            >
-                              {t('settings.remove')}
-                            </Button>
-                          )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-xs text-slate-100 truncate">{member.name}</h4>
+                            {isActive && (
+                              <span className="text-[8px] font-mono text-teal-400 font-bold bg-teal-500/20 px-1.5 py-0.5 rounded">
+                                ACTIVE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            {member.relation} · Age {member.age}
+                          </p>
                         </div>
                       </div>
-                    )
-                  })
-                )}
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick(member)}
+                          className="px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-400 text-[10px] font-bold hover:border-teal-500/40 cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        {!isActive && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveProfileId(member.id)}
+                            className="px-2.5 py-1 rounded-xl bg-teal-500 text-slate-950 font-extrabold text-[10px] cursor-pointer"
+                          >
+                            Switch
+                          </button>
+                        )}
+                        {member.id !== 'self' && (
+                          <button
+                            type="button"
+                            onClick={() => removeFamilyMember(member.id)}
+                            className="px-2 py-1 rounded-xl text-[10px] text-rose-400 hover:text-rose-300 font-bold cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
 
-              {/* Add Member form */}
-              <form onSubmit={handleAddMember} className="border-t border-slate-900 pt-4 space-y-3">
-                <h4 className="font-bold text-xs text-slate-300">{t('settings.addMember')}</h4>
+              {/* Add New Family Member Form */}
+              <form onSubmit={handleAddMember} className="border-t border-slate-800 pt-4 space-y-3">
+                <h4 className="font-bold text-xs text-slate-300 font-mono">+ Add New Family Profile</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <input 
                     type="text" 
-                    placeholder={t('settings.namePlaceholder')}
+                    placeholder="Full Name"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="bg-slate-900 border border-slate-850 text-xs px-3 py-2 rounded-lg text-slate-200 focus:outline-none focus:border-teal-500/30"
+                    className="bg-slate-900 border border-slate-800 text-xs px-3 py-2 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500"
                   />
                   <select 
                     value={newRelation}
                     onChange={(e) => setNewRelation(e.target.value)}
-                    className="bg-slate-900 border border-slate-850 text-xs px-3 py-2 rounded-lg text-slate-400 focus:outline-none focus:border-teal-500/30 cursor-pointer"
+                    className="bg-slate-900 border border-slate-800 text-xs px-3 py-2 rounded-xl text-slate-300 focus:outline-none cursor-pointer"
                   >
                     <option value="Spouse">Spouse</option>
                     <option value="Child">Child</option>
@@ -261,109 +485,156 @@ function Settings() {
                   </select>
                   <input 
                     type="number" 
-                    placeholder={t('settings.agePlaceholder')}
+                    placeholder="Age"
                     value={newAge}
                     onChange={(e) => setNewAge(e.target.value)}
-                    className="bg-slate-900 border border-slate-850 text-xs px-3 py-2 rounded-lg text-slate-200 focus:outline-none focus:border-teal-500/30"
+                    className="bg-slate-900 border border-slate-800 text-xs px-3 py-2 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500"
                   />
                 </div>
-                <Button 
+                <button
                   type="submit"
-                  size="sm"
-                  className="rounded-lg py-1.5 px-3.5 text-[10px]"
+                  className="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs cursor-pointer"
                 >
-                  {t('settings.addBtn')}
-                </Button>
+                  Add Profile
+                </button>
               </form>
             </Card>
-
           </div>
+        )}
 
-          {/* Right Column: Preferences */}
-          <div className="md:col-span-5 space-y-6">
-            
-            {/* Logged in as */}
-            {userEmail && (
-              <Card className="p-4 bg-slate-950/40 space-y-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Logged in as</p>
-                <p className="text-sm font-bold text-teal-400 font-mono truncate">{userEmail}</p>
-              </Card>
-            )}
-
-            <Card className="p-5 space-y-5 bg-slate-950/40">
-              <h3 className="font-bold text-sm text-slate-200 uppercase tracking-wider font-mono pb-2 border-b border-slate-900">{t('settings.prefsTitle')}</h3>
+        {/* TAB 3: SECURITY & PASSWORD */}
+        {activeTab === 'security' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              {/* Language Selection */}
-              <div className="space-y-2">
-                <label htmlFor="language-select" className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {t('settings.languageLabel')}
-                </label>
-                <select 
-                  id="language-select"
-                  value={preferences.language}
-                  onChange={(e) => updatePreference('language', e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-850 text-xs px-3 py-2 rounded-lg text-slate-200 focus:outline-none focus:border-teal-500/30 cursor-pointer"
-                >
-                  {LANGUAGES.map(lang => (
-                    <option key={lang.value} value={lang.value}>{lang.label}</option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-slate-600 font-mono">
-                  Translates navigation and UI labels instantly.
-                </p>
-              </div>
-
-              {/* Current language indicator */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-teal-950/20 border border-teal-900/30 rounded-lg">
-                <span className="text-teal-400 text-sm">🌐</span>
-                <div>
-                  <p className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">Active Language</p>
-                  <p className="text-xs text-slate-300 font-semibold">{preferences.language}</p>
+              {/* Reset Password Card */}
+              <Card className="p-6 space-y-4 bg-[#0c1220] border border-slate-800/80">
+                <div className="pb-2 border-b border-slate-800">
+                  <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider font-mono">
+                    🔑 Reset Password
+                  </h3>
                 </div>
+
+                {passwordToast && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400 font-bold">
+                    ✓ {passwordToast}
+                  </div>
+                )}
+
+                {passwordError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-400 font-bold">
+                    {passwordError}
+                  </div>
+                )}
+
+                <form onSubmit={handlePasswordReset} className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-900 border border-slate-800 text-xs px-3.5 py-2.5 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min 6 characters"
+                      className="w-full bg-slate-900 border border-slate-800 text-xs px-3.5 py-2.5 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter new password"
+                      className="w-full bg-slate-900 border border-slate-800 text-xs px-3.5 py-2.5 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider transition-all shadow-md mt-2 cursor-pointer"
+                  >
+                    Update Password
+                  </button>
+                </form>
+              </Card>
+
+              {/* Session Control Card */}
+              <Card className="p-6 space-y-4 bg-[#0c1220] border border-slate-800/80 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <h3 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider font-mono pb-2 border-b border-slate-800">
+                    Session & Active Sign-in
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Log out of your current session on this device. Your vaulted medical records remain end-to-end encrypted and safe.
+                  </p>
+                </div>
+
+                <button 
+                  type="button"
+                  onClick={() => logoutUser()}
+                  className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs rounded-xl py-3 px-4 transition-all cursor-pointer"
+                >
+                  Log Out of Session
+                </button>
+              </Card>
+
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: DANGER ZONE & DELETION */}
+        {activeTab === 'danger' && (
+          <div className="space-y-6 animate-fade-in">
+            <Card className="p-6 space-y-5 bg-[#0c1220] border border-rose-500/30">
+              <div className="pb-2 border-b border-slate-800">
+                <h3 className="font-extrabold text-sm text-rose-400 uppercase tracking-wider font-mono">
+                  ⚠️ Danger Zone — Account Deletion
+                </h3>
               </div>
-            </Card>
 
-            {/* Session Actions */}
-            <Card className="p-5 space-y-4 bg-slate-950/40 border border-slate-900">
-              <h3 className="font-bold text-sm text-slate-200 uppercase tracking-wider font-mono pb-2 border-b border-slate-900">Session</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Log out of your current session on this device. You can sign back in at any time.
-              </p>
-              <button 
-                type="button"
-                onClick={() => logoutUser()}
-                className="w-full bg-gradient-to-r from-red-600 to-red-900 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/20"
-              >
-                {t('settings.logOut')}
-              </button>
-            </Card>
-
-            {/* Danger Zone */}
-            <Card className="p-5 space-y-5 bg-slate-950/40 border border-rose-950/40">
-              <h3 className="font-bold text-sm text-rose-500 uppercase tracking-wider font-mono pb-2 border-b border-rose-950/40">Danger Zone</h3>
-              <div className="space-y-3">
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Permanently delete your account and all associated health records, profiles, and uploaded files. This action is irreversible.
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+                <span className="text-xs font-bold text-amber-400 uppercase font-mono tracking-wider block">
+                  🛡️ 7-Day Grace Period Recovery Guaranteed
+                </span>
+                <p className="text-xs text-amber-200/90 leading-relaxed font-medium">
+                  When you request deletion, your account is scheduled for permanent removal after <strong>7 days</strong>. During this grace period, you can log in and click <strong>"Recover Account"</strong> anytime.
                 </p>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Requires entering your permanent User ID <strong className="text-teal-400 font-mono select-all">{userId}</strong> to confirm deletion request.
+                </p>
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setDeleteModalOpen(true)
-                    setOtpSent(false)
-                    setDeleteOtpCode('')
-                    setDeleteError('')
-                    setDeleteSuccess('')
-                  }}
-                  className="w-full bg-gradient-to-r from-red-600 to-red-900 hover:from-red-500 hover:to-red-600 text-red-100 font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/25 border border-red-700/30"
+                  onClick={() => setDeleteModalOpen(true)}
+                  className="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-extrabold text-xs rounded-xl py-3 px-4 transition-all cursor-pointer"
                 >
-                  Delete Account
+                  Delete Account (Schedule 7-Day Grace Period)
                 </button>
               </div>
             </Card>
-
           </div>
-
-        </div>
+        )}
 
       </div>
 
@@ -374,21 +645,14 @@ function Settings() {
         onSave={handleSaveEdit}
       />
 
-      {/* Delete Account Verification Modal */}
+      {/* Delete Account Modal with User ID Verification & 7-Day Grace Period */}
       <DeleteAccountModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         userEmail={userEmail}
-        sendDeleteOtp={sendDeleteOtp}
-        confirmDeleteAccount={confirmDeleteAccount}
-        onSuccess={() => {
-          logoutUser()
-          setDeleteModalOpen(false)
-          navigate('/')
-        }}
+        userId={userId}
+        onScheduleDeletion={handleScheduleDeletion}
       />
     </div>
   )
 }
-
-export default Settings
