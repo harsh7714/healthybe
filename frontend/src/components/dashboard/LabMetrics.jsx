@@ -47,7 +47,7 @@ function LabMetrics({ metrics, selectedProfile, t }) {
                       {m.value} <span className="text-xs text-slate-550 font-normal">{m.unit}</span>
                     </td>
                     <td className="py-3.5 pr-4">
-                      <Badge variant={isAbnormal ? 'warning' : 'normal'}>{m.status}</Badge>
+                      <Badge variant={isAbnormal ? 'warning' : 'normal'} className="whitespace-nowrap">{m.status}</Badge>
                     </td>
                     <td className="py-3.5 text-slate-550 font-mono text-[10px] max-w-[140px] truncate">
                       {m.fileName}

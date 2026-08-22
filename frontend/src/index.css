@@ -151,6 +151,15 @@ body.light .text-slate-500 {
 body.light .text-slate-600 {
   color: #94a3b8 !important;
 }
+/* Heading and text-white overrides in light mode */
+body.light h1.text-white,
+body.light h2.text-white,
+body.light h3.text-white,
+body.light h4.text-white,
+body.light p.text-white,
+body.light span.text-white:not(.btn-white) {
+  color: #0f172a !important;
+}
 /* Keep accent colors vibrant in light mode */
 body.light .text-teal-400 { color: #0d9488 !important; }
 body.light .text-cyan-400  { color: #0891b2 !important; }
@@ -175,6 +184,10 @@ body.light .border-teal-900\/60 {
 }
 
 /* ── Inputs & Forms ──────────────────────────────────────── */
+option {
+  background-color: #090d16;
+  color: #e2e8f0;
+}
 body.light input,
 body.light select,
 body.light textarea {
@@ -194,7 +207,7 @@ body.light textarea:focus {
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1) !important;
 }
 body.light option {
-  background-color: #f8fafc !important;
+  background-color: #ffffff !important;
   color: #0f172a !important;
 }
 
@@ -632,8 +645,16 @@ body.light .chat-bubble-user {
   color: #115e59 !important;
   box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.05), 0 2px 4px -1px rgba(13, 148, 136, 0.03) !important;
 }
+body.light .chat-bubble-user strong,
+body.light .chat-bubble-user p,
+body.light .chat-bubble-user span {
+  color: #0f172a !important;
+}
 body.light .chat-bubble-ai {
   color: #1e293b !important;
+}
+body.light .chat-bubble-ai strong {
+  color: #0f172a !important;
 }
 body.light .chat-user-avatar {
   background-color: #f1f5f9 !important;

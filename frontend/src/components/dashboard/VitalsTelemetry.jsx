@@ -35,7 +35,7 @@ function VitalsTelemetry({ vitals, selectedProfile, t }) {
                   </div>
                   <span className="text-xs font-bold text-slate-200 tracking-wide">{v.memberName}</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                   {Object.entries(v.stats).map(([name, stat], sIdx) => (
                     <div
                       key={sIdx}

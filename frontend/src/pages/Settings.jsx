@@ -218,16 +218,14 @@ function Settings() {
                               {t('settings.switch')}
                             </Button>
                           )}
-                          {member.id !== 'self' && (
-                            <Button 
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFamilyMember(member.id)}
-                              className="text-[10px] text-rose-500 hover:text-rose-450 font-semibold px-2 py-1 rounded-lg active:scale-100"
-                            >
-                              {t('settings.remove')}
-                            </Button>
-                          )}
+                          <Button 
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFamilyMember(member.id)}
+                            className="text-[10px] text-rose-500 hover:text-rose-450 font-semibold px-2 py-1 rounded-lg active:scale-100"
+                          >
+                            {t('settings.remove')}
+                          </Button>
                         </div>
                       </div>
                     )
@@ -347,13 +345,7 @@ function Settings() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setDeleteModalOpen(true)
-                    setOtpSent(false)
-                    setDeleteOtpCode('')
-                    setDeleteError('')
-                    setDeleteSuccess('')
-                  }}
+                  onClick={() => setDeleteModalOpen(true)}
                   className="w-full bg-gradient-to-r from-red-600 to-red-900 hover:from-red-500 hover:to-red-600 text-red-100 font-bold text-xs rounded-xl py-2.5 px-4 transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/25 border border-red-700/30"
                 >
                   Delete Account

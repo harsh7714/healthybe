@@ -309,7 +309,7 @@ function Chat() {
   }
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 h-[100dvh] md:h-screen flex flex-col justify-start pt-4 md:pt-32 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:pb-6 px-4 sm:px-8 overflow-hidden relative">
+    <div className="bg-[#0B0F19] text-slate-100 h-[100dvh] md:h-screen flex flex-col justify-start pt-3 md:pt-20 lg:pt-24 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:pb-6 px-3 sm:px-6 lg:px-8 overflow-hidden relative">
 
       {/* Background Ambient Glows */}
       <div className="absolute top-[10%] left-[15%] w-[600px] h-[600px] rounded-full bg-teal-900/10 blur-[130px] pointer-events-none" />
@@ -434,7 +434,7 @@ function Chat() {
           {showFilePicker && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowFilePicker(false)} />
-              <div className="absolute left-2 xs:left-0 bottom-16 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-slate-950 border border-slate-900 rounded-2xl p-4 shadow-2xl z-20 animate-fade-in space-y-3">
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-16 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-slate-950 border border-slate-900 rounded-2xl p-4 shadow-2xl z-20 animate-fade-in space-y-3">
                 <div className="flex justify-between items-center pb-2 border-b border-slate-900">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Vault Clinical Reports</span>
                   <span className="text-[9px] text-teal-400 font-bold font-mono">INDEXED</span>
@@ -467,12 +467,12 @@ function Chat() {
           )}
 
           <form onSubmit={handleSend} className="flex gap-2 relative w-full items-center">
-            <div className="chat-input-capsule flex-1 bg-gradient-to-r from-teal-950/20 via-slate-900/60 to-cyan-950/20 border border-slate-800/80 rounded-full py-1 pl-2 pr-2 flex items-center justify-between focus-within:border-teal-500/50 focus-within:ring-2 focus-within:ring-teal-950/30 transition-all duration-300 shadow-lg backdrop-blur-md">
+            <div className="chat-input-capsule flex-1 bg-gradient-to-r from-teal-950/20 via-slate-900/60 to-cyan-950/20 border border-slate-800/80 rounded-full py-1 pl-2 pr-2 flex items-center justify-between focus-within:border-teal-500/50 focus-within:ring-2 focus-within:ring-teal-950/30 transition-all duration-300 shadow-lg backdrop-blur-md min-w-0">
 
               <button
                 type="button"
                 onClick={() => setShowFilePicker(!showFilePicker)}
-                className={`chat-btn-attach w-8 h-8 rounded-full transition-all text-base font-black flex items-center justify-center ${
+                className={`chat-btn-attach w-8 h-8 rounded-full transition-all text-base font-black flex items-center justify-center shrink-0 ${
                   showFilePicker
                     ? 'chat-btn-attach-active bg-teal-950/60 text-teal-400'
                     : 'bg-slate-800/40 text-slate-400 hover:text-slate-200'
@@ -483,12 +483,12 @@ function Chat() {
               </button>
 
               {attachedFile && (
-                <div className="flex items-center gap-1 bg-teal-950/60 border border-teal-900/60 rounded-full px-2 py-0.5 text-[9px] font-bold text-teal-400 select-none animate-fade-in shrink-0 ml-1 shadow-sm">
-                  <span>📄 {attachedFile.name.split('_').slice(0, 2).join('_')}...</span>
+                <div className="flex items-center gap-1 bg-teal-950/60 border border-teal-900/60 rounded-full px-2 py-0.5 text-[9px] font-bold text-teal-400 select-none animate-fade-in shrink-0 ml-1 shadow-sm max-w-[110px] xs:max-w-[150px] sm:max-w-[200px]">
+                  <span className="truncate">📄 {attachedFile.name}</span>
                   <button
                     type="button"
                     onClick={() => setAttachedFile(null)}
-                    className="text-teal-600 hover:text-rose-400 font-extrabold text-[9px] ml-1 transition-colors"
+                    className="text-teal-600 hover:text-rose-400 font-extrabold text-[9px] ml-1 transition-colors shrink-0"
                   >
                     ✕
                   </button>

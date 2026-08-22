@@ -80,18 +80,6 @@ router.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' })
     }
 
-    // Make sure profiles exist for this user in case they were deleted or not created
-    const existingProfilesCount = await Profile.countDocuments({ userId: trimEmail })
-    if (existingProfilesCount === 0) {
-      const rawName = trimEmail.split('@')[0]
-      const userName = user.name || rawName.split(/[._-]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
-      const userInitials = userName.split(' ').map(p => p.charAt(0)).join('').toUpperCase().slice(0, 2)
-      const defaultProfiles = [
-        { userId: trimEmail, id: "self", name: userName, relation: "Self (Primary)", age: "24 Yrs", email: trimEmail, initials: userInitials }
-      ]
-      await Profile.create(defaultProfiles)
-    }
-
     res.json({ success: true, user: { email: user.email, name: user.name } })
   } catch (err) {
     console.error('Login error:', err.message)
@@ -205,8 +193,8 @@ router.post('/api/auth/reset-password', async (req, res) => {
   }
 })
 
-// POST /api/auth/send-delete-otp
-router.post('/api/auth/send-delete-otp', async (req, res) => {
+// Direct Account Deletion without OTP requirement
+const handleAccountDeletion = async (req, res) => {
   try {
     const { email } = req.body
     const sessionEmail = req.headers['x-user-email']
@@ -217,66 +205,8 @@ router.post('/api/auth/send-delete-otp', async (req, res) => {
 
     const trimEmail = email.trim().toLowerCase()
 
-    // Email must match session header to prevent deleting other users' accounts
-    if (!sessionEmail || sessionEmail.trim().toLowerCase() !== trimEmail) {
-      return res.status(403).json({ error: 'Unauthorized delete OTP request.' })
-    }
-
-    const user = await User.findOne({ email: trimEmail })
-    if (!user) {
-      return res.status(404).json({ error: 'User account not found.' })
-    }
-
-    // Generate random 6-digit OTP code
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = Date.now() + 5 * 60 * 1000 // 5 minutes validity
-
-    // Store it
-    deleteAccountOtps.set(trimEmail, { otp, expiresAt })
-    console.log(`🔑 [DELETE OTP] Verification code generated for ${trimEmail}`)
-
-    // Send the deletion warning email
-    try {
-      await sendDeleteOtpEmail(trimEmail, otp)
-    } catch (mailErr) {
-      console.warn(`⚠️ Failed to send account delete OTP email to ${trimEmail}:`, mailErr.message)
-    }
-
-    res.json({ success: true, message: 'Account deletion OTP sent successfully.' })
-  } catch (err) {
-    console.error('send-delete-otp error:', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// POST /api/auth/confirm-delete-account
-router.post('/api/auth/confirm-delete-account', async (req, res) => {
-  try {
-    const { email, otp } = req.body
-    const sessionEmail = req.headers['x-user-email']
-
-    if (!email || !otp) {
-      return res.status(400).json({ error: 'Email and OTP are required.' })
-    }
-
-    const trimEmail = email.trim().toLowerCase()
-
     if (!sessionEmail || sessionEmail.trim().toLowerCase() !== trimEmail) {
       return res.status(403).json({ error: 'Unauthorized account delete request.' })
-    }
-
-    const record = deleteAccountOtps.get(trimEmail)
-    if (!record) {
-      return res.status(400).json({ error: 'No deletion OTP requested for this email.' })
-    }
-
-    if (Date.now() > record.expiresAt) {
-      deleteAccountOtps.delete(trimEmail)
-      return res.status(400).json({ error: 'Deletion OTP has expired. Please request a new one.' })
-    }
-
-    if (record.otp !== otp.trim()) {
-      return res.status(400).json({ error: 'Invalid OTP code. Account was not deleted.' })
     }
 
     const user = await User.findOne({ email: trimEmail })
@@ -302,15 +232,16 @@ router.post('/api/auth/confirm-delete-account', async (req, res) => {
     await Profile.deleteMany({ userId: trimEmail })
     await User.deleteOne({ email: trimEmail })
 
-    // Clean up OTP
-    deleteAccountOtps.delete(trimEmail)
-
     console.log(`❌ [ACCOUNT PURGED] Successfully deleted all data for: ${trimEmail}`)
     res.json({ success: true, message: 'Your account and all associated data have been permanently deleted.' })
   } catch (err) {
-    console.error('confirm-delete-account error:', err.message)
+    console.error('delete-account error:', err.message)
     res.status(500).json({ error: err.message })
   }
-})
+}
+
+router.post('/api/auth/delete-account', handleAccountDeletion)
+router.post('/api/auth/confirm-delete-account', handleAccountDeletion)
+router.post('/api/auth/send-delete-otp', (_req, res) => res.json({ success: true, message: 'OTP bypass active.' }))
 
 module.exports = router

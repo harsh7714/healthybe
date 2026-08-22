@@ -33,7 +33,7 @@ function MedicationLog({ medications, selectedProfile, t }) {
                   <td className="py-3.5 pr-4 font-mono text-slate-300 font-semibold">{med.dose}</td>
                   <td className="py-3.5 pr-4 text-slate-450 font-medium leading-relaxed">{med.freq}</td>
                   <td className="py-3.5">
-                    <Badge variant={med.status.toLowerCase().includes('active') ? 'normal' : 'warning'}>
+                    <Badge variant={med.status.toLowerCase().includes('active') ? 'normal' : 'warning'} className="whitespace-nowrap">
                       {med.status}
                     </Badge>
                   </td>

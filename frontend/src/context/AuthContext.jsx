@@ -104,15 +104,17 @@ export function AuthProvider({ children }) {
     return await res.json()
   }
 
-  const sendDeleteOtp = async (email) => {
+  const deleteAccount = async (email) => {
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiBase}/api/auth/send-delete-otp`, {
+    const res = await fetch(`${apiBase}/api/auth/delete-account`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'x-user-email': email.trim().toLowerCase()
       },
-      body: JSON.stringify({ email: email.trim().toLowerCase() })
+      body: JSON.stringify({ 
+        email: email.trim().toLowerCase()
+      })
     })
 
     if (!res.ok) {
@@ -123,26 +125,12 @@ export function AuthProvider({ children }) {
     return await res.json()
   }
 
-  const confirmDeleteAccount = async (email, otp) => {
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiBase}/api/auth/confirm-delete-account`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-user-email': email.trim().toLowerCase()
-      },
-      body: JSON.stringify({ 
-        email: email.trim().toLowerCase(), 
-        otp: otp.trim() 
-      })
-    })
+  const sendDeleteOtp = async (email) => {
+    return deleteAccount(email)
+  }
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.error || `Request failed with status ${res.status}`)
-    }
-
-    return await res.json()
+  const confirmDeleteAccount = async (email) => {
+    return deleteAccount(email)
   }
 
   return (
@@ -156,7 +144,8 @@ export function AuthProvider({ children }) {
       verifyOtp,
       resetPassword,
       sendDeleteOtp,
-      confirmDeleteAccount
+      confirmDeleteAccount,
+      deleteAccount
     }}>
       {children}
     </AuthContext.Provider>

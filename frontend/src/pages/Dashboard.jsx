@@ -200,8 +200,8 @@ function Dashboard() {
   }
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-6 md:px-8 lg:px-12">
+      <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
 
         {/* ── Dashboard Filter & Header ────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between items-center gap-4 pb-4 border-b border-slate-900/60 text-center md:text-left">
@@ -217,20 +217,20 @@ function Dashboard() {
           </div>
 
           {activeReports.length > 0 && (
-            <div className="flex items-center justify-center gap-2 bg-slate-950/20 border border-slate-900 rounded-2xl px-4 py-2 w-fit mx-auto md:mx-0 shrink-0">
+            <div className="flex items-center justify-center gap-2 bg-slate-950/20 border border-slate-900 rounded-2xl px-3 sm:px-4 py-2 w-full sm:w-auto shrink-0">
               <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-extrabold whitespace-nowrap">Report Filter:</span>
               <select
                 value={selectedReportId}
                 onChange={(e) => setSelectedReportId(e.target.value)}
                 className="bg-transparent text-teal-400 font-bold text-xs focus:outline-none cursor-pointer max-w-[180px] sm:max-w-[220px] truncate ml-1.5"
               >
-                <option value="all" className="bg-slate-950 text-slate-300">All Reports (Cumulative)</option>
+                <option value="all">All Reports (Cumulative)</option>
                 {activeReports.map((report) => {
                   const truncatedName = report.name.length > 20
                     ? report.name.slice(0, 18) + '...'
                     : report.name
                   return (
-                    <option key={report.id} value={report.id} className="bg-slate-950 text-slate-350">
+                    <option key={report.id} value={report.id}>
                       {truncatedName} ({report.date})
                     </option>
                   )
@@ -241,10 +241,10 @@ function Dashboard() {
         </div>
 
         {/* Top Section: Vitals & Lab Telemetry */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* Left Panel: Vitals & Lab Measurements */}
-          <div className="lg:col-span-8 space-y-8">
+          <div className="lg:col-span-8 space-y-6 lg:space-y-8">
             {/* Vitals Telemetry */}
             <VitalsTelemetry vitals={vitals} selectedProfile={selectedProfile} t={t} />
 
@@ -253,7 +253,7 @@ function Dashboard() {
           </div>
 
           {/* Right Panel: AI Insights & Dynamic Diet Plan */}
-          <div className="lg:col-span-4 space-y-8">
+          <div className="lg:col-span-4 space-y-6 lg:space-y-8">
             
             {/* AI Warnings / Medical Alerts */}
             <Card className="p-6 space-y-4 bg-slate-950/40">
@@ -363,7 +363,7 @@ function Dashboard() {
         </div>
 
         {/* Bottom Section: Cumulative Histories & AI Agent Log */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 pt-4">
           
           <CheckupList checkups={checkups} selectedProfile={selectedProfile} t={t} />
 

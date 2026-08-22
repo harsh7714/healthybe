@@ -44,6 +44,7 @@ router.get('/api/reports', async (req, res) => {
       : { userId }
 
     const docs = await Report.find(filter).sort({ createdAt: -1 })
+    const s3Configured = Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_BUCKET_NAME)
 
     const reports = await Promise.all(
       docs.map(async doc => {
@@ -52,10 +53,13 @@ router.get('/api/reports', async (req, res) => {
           // Replace base64 string with reference path to download endpoint
           s3Url = `/api/reports/${doc._id}/file`
         } else if (doc.s3Key && (!s3Url || !s3Url.startsWith('data:'))) {
-          // Try presigning S3 key, if fails fallback to download endpoint
-          try { 
-            s3Url = await presign(doc.s3Key) 
-          } catch (_) {
+          if (s3Configured) {
+            try { 
+              s3Url = await presign(doc.s3Key) 
+            } catch (_) {
+              s3Url = `/api/reports/${doc._id}/file`
+            }
+          } else {
             s3Url = `/api/reports/${doc._id}/file`
           }
         }

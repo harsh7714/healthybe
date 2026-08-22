@@ -18,19 +18,7 @@ const upload = multer({
 router.get('/api/profiles', async (req, res) => {
   try {
     const userId = getUserId(req)
-    let docs = await Profile.find({ userId }).sort({ createdAt: 1 })
-    if (docs.length === 0) {
-      // Parse profile details from user Email
-      const userEmail = userId.includes('@') ? userId : 'shared-email@example.com'
-      const rawName = userId.includes('@') ? userId.split('@')[0] : 'Harsh Gupta'
-      const userName = rawName.split(/[._-]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
-      const userInitials = userName.split(' ').map(p => p.charAt(0)).join('').toUpperCase().slice(0, 2)
-
-      const defaultProfiles = [
-        { userId, id: "self", name: userName, relation: "Self (Primary)", age: "24 Yrs", email: userEmail, initials: userInitials }
-      ]
-      docs = await Profile.create(defaultProfiles)
-    }
+    const docs = await Profile.find({ userId }).sort({ createdAt: 1 })
 
     const profiles = docs.map(doc => ({
       id: doc.id,
