@@ -84,12 +84,6 @@ export function FloatingChatBubble() {
     if (!isDragging) return
     setIsDragging(false)
 
-    // Calculate drag distance to determine click vs drag
-    const moveDist = Math.hypot(
-      position.x - dragPosRef.current.x,
-      position.y - dragPosRef.current.y
-    )
-
     // If dropped on trash zone, remove
     if (dragOverTrash) {
       setIsDismissed(true)

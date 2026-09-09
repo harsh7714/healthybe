@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Button } from './ui/Button'
 
 function EditProfileModal({ editingProfile, onClose, onSave }) {
-  const [editName, setEditName] = useState('')
-  const [editAge, setEditAge] = useState('')
-  const [editRelation, setEditRelation] = useState('')
+  const [prevProfile, setPrevProfile] = useState(editingProfile)
+  const [editName, setEditName] = useState(editingProfile?.name || '')
+  const [editAge, setEditAge] = useState(editingProfile?.age ? editingProfile.age.replace(/\s*Yrs/i, '') : '')
+  const [editRelation, setEditRelation] = useState(editingProfile?.relation || '')
 
-  useEffect(() => {
-    if (editingProfile) {
-      const rawAge = editingProfile.age ? editingProfile.age.replace(/\s*Yrs/i, '') : ''
-      setEditName(editingProfile.name || '')
-      setEditAge(rawAge)
-      setEditRelation(editingProfile.relation || '')
-    }
-  }, [editingProfile])
+  if (editingProfile !== prevProfile) {
+    setPrevProfile(editingProfile)
+    const rawAge = editingProfile?.age ? editingProfile.age.replace(/\s*Yrs/i, '') : ''
+    setEditName(editingProfile?.name || '')
+    setEditAge(rawAge)
+    setEditRelation(editingProfile?.relation || '')
+  }
 
   if (!editingProfile) return null
 

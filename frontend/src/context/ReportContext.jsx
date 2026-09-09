@@ -310,7 +310,7 @@ const generateDynamicReportMetrics = (reportName) => {
 
 export function ReportProvider({ children }) {
   const { userEmail, isLoggedIn } = useAuth()
-  const { family, activeProfileId, setFamily } = useProfiles()
+  const { family, setFamily } = useProfiles()
 
   const [reports, setReports] = useState([])
   const [reportsLoading, setReportsLoading] = useState(false)
@@ -318,11 +318,18 @@ export function ReportProvider({ children }) {
   const [uploadError, setUploadError] = useState(null)
   const [globalStagedFile, setGlobalStagedFile] = useState(null)
 
+  if (!isLoggedIn || !userEmail) {
+    if (reports.length > 0) {
+      setReports([])
+    }
+    if (reportsLoading) {
+      setReportsLoading(false)
+    }
+  }
+
   // Fetch all reports from MongoDB when userEmail / login state changes
   useEffect(() => {
     if (!isLoggedIn || !userEmail) {
-      setReports([])
-      setReportsLoading(false)
       return
     }
 

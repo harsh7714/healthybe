@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import jsPDF from 'jspdf'
 import { Button } from './ui/Button'
 import { Spinner } from './ui/Spinner'
 
 export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
-  if (!isOpen) return null
-
   const [step, setStep] = useState('camera') // 'camera' | 'editor' | 'compile'
   const [pages, setPages] = useState([])
   const [activePageIndex, setActivePageIndex] = useState(0)
@@ -29,8 +27,19 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
   // Drag states for crop handles
   const [draggedHandle, setDraggedHandle] = useState(null) // 'top' | 'bottom' | 'left' | 'right'
 
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+  }, [])
+
   // Global unmount & unload tracking to guarantee camera track release
   useEffect(() => {
+    if (!isOpen) return
     isUnmountedRef.current = false
     const handleUnload = () => {
       if (streamRef.current) {
@@ -46,36 +55,9 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
       window.removeEventListener('beforeunload', handleUnload)
       window.removeEventListener('pagehide', handleUnload)
     }
-  }, [])
+  }, [isOpen, stopCamera])
 
-  // Initialize camera and get device list
-  useEffect(() => {
-    if (step === 'camera') {
-      initCamera()
-    } else {
-      stopCamera()
-    }
-    return () => stopCamera()
-  }, [step, selectedDeviceId])
-
-  // Get list of video devices
-  useEffect(() => {
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices()
-        .then(devs => {
-          const videoDevs = devs.filter(d => d.kind === 'videoinput')
-          setDevices(videoDevs)
-          if (videoDevs.length && !selectedDeviceId) {
-            // Default to environment (back) camera if found
-            const backCam = videoDevs.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'))
-            setSelectedDeviceId(backCam ? backCam.deviceId : videoDevs[0].deviceId)
-          }
-        })
-        .catch(err => console.warn('Could not enumerate cameras:', err))
-    }
-  }, [])
-
-  const initCamera = async () => {
+  const initCamera = useCallback(async () => {
     stopCamera()
     setIsCameraStarting(true)
     setCameraError(null)
@@ -111,17 +93,39 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
         setIsCameraStarting(false)
       }
     }
-  }
+  }, [isOpen, selectedDeviceId, stopCamera])
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
+  // Initialize camera and get device list
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera()
+      return
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
+    if (step === 'camera') {
+      initCamera()
+    } else {
+      stopCamera()
     }
-  }
+    return () => stopCamera()
+  }, [isOpen, step, initCamera, stopCamera])
+
+  // Get list of video devices
+  useEffect(() => {
+    if (!isOpen) return
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices()
+        .then(devs => {
+          const videoDevs = devs.filter(d => d.kind === 'videoinput')
+          setDevices(videoDevs)
+          if (videoDevs.length && !selectedDeviceId) {
+            // Default to environment (back) camera if found
+            const backCam = videoDevs.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'))
+            setSelectedDeviceId(backCam ? backCam.deviceId : videoDevs[0].deviceId)
+          }
+        })
+        .catch(err => console.warn('Could not enumerate cameras:', err))
+    }
+  }, [isOpen, selectedDeviceId])
 
   // Snap photo
   const handleCapture = () => {
@@ -290,7 +294,7 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
   }
 
   // Support mobile touch drag
-  const handleCropTouchStart = (handle, e) => {
+  const handleCropTouchStart = (handle) => {
     setDraggedHandle(handle)
   }
 
@@ -405,6 +409,8 @@ export function DocumentScannerModal({ isOpen, onClose, onComplete }) {
       setIsCompiling(false)
     }
   }
+
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col overflow-hidden animate-fade-in">

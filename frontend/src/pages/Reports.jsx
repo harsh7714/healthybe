@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
-import { photoToPdf, photosToMultiPagePdf } from '../utils/photoToPdf'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -30,7 +29,9 @@ function Reports() {
   const [editingFileNameVal, setEditingFileNameVal] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [isMobile, setIsMobile] = useState(false)
-  const [isScannerOpen, setIsScannerOpen] = useState(false)
+  const [isScannerOpen, setIsScannerOpen] = useState(() => {
+    return new URLSearchParams(window.location.search).get('scan') === 'true'
+  })
 
   useEffect(() => {
     const check = () =>
@@ -56,10 +57,12 @@ function Reports() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (params.get('scan') === 'true') {
-      setIsScannerOpen(true)
       window.history.replaceState({}, document.title, window.location.pathname)
+      setTimeout(() => {
+        setIsScannerOpen(true)
+      }, 0)
     }
-  }, [location])
+  }, [location.search])
 
   /* ── Helpers ─────────────────────────────────────────────────── */
   const showSuccess = (msg) => {

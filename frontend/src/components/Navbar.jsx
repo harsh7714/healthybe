@@ -114,15 +114,6 @@ function Navbar() {
     { path: "/emergency", label: t('nav.emergency') }
   ]
 
-  const drawerLinks = [
-    { path: "/", label: t('nav.home'), icon: "🏠" },
-    { path: "/dashboard", label: t('nav.dashboard'), icon: "📊" },
-    { path: "/chat", label: t('nav.chat'), icon: "💬" },
-    { path: "/reports", label: t('nav.reports'), icon: "📁" },
-    { path: "/emergency", label: t('nav.emergency'), icon: "🚨" },
-    { path: "/settings", label: t('nav.settings'), icon: "⚙️" }
-  ]
-
   return (
     <>
       {/* Hidden Native Camera Input */}

@@ -427,8 +427,13 @@ function Chat() {
 
         {/* Bottom Input Bar */}
         <div className="w-full max-w-3xl mx-auto space-y-1.5 shrink-0 pt-0.5 relative">
-
-
+          {/* Error Banner */}
+          {error && (
+            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs px-3 py-2 rounded-xl flex items-center justify-between animate-fade-in">
+              <span>{error}</span>
+              <button type="button" onClick={() => setError('')} className="text-rose-400 hover:text-rose-200 font-bold ml-2">✕</button>
+            </div>
+          )}
 
           {/* File Picker Popover */}
           {showFilePicker && (

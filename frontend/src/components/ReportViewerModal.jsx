@@ -62,7 +62,7 @@ function ReportViewerModal({ viewingReport, onClose, userEmail, isMobile }) {
         renderPdfPages(fileUrl)
       }
     }
-  }, [viewingReport, isMobile])
+  }, [viewingReport, isMobile, isPdfFile, fileUrl])
 
   if (!viewingReport) return null
 

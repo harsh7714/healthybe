@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 
 function DeleteAccountModal({ isOpen, onClose, userEmail, confirmDeleteAccount, sendDeleteOtp, onSuccess }) {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
   const [deleteError, setDeleteError] = useState('')
   const [deleteSuccess, setDeleteSuccess] = useState('')
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
   // Reset state when modal is opened/closed
-  useEffect(() => {
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen)
     if (isOpen) {
       setDeleteError('')
       setDeleteSuccess('')
       setIsDeletingAccount(false)
     }
-  }, [isOpen])
+  }
 
   if (!isOpen) return null
 

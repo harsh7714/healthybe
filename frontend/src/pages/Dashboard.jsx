@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useHealth } from '../context/HealthContext'
 import { Card, CardHeader } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -15,7 +15,14 @@ function Dashboard() {
   const { family, activeProfileId, activeProfile, getDerivedHealthData, isLoggedIn, familyLoading, reports = [], getReportAnalysis } = useHealth()
   const { t, lang } = useTranslation()
   const [openTechDetails, setOpenTechDetails] = useState({})
+  const [prevProfileId, setPrevProfileId] = useState(activeProfileId)
   const [selectedReportId, setSelectedReportId] = useState('all')
+
+  // Reset report filter when switching family profiles
+  if (activeProfileId !== prevProfileId) {
+    setPrevProfileId(activeProfileId)
+    setSelectedReportId('all')
+  }
 
   const toggleTechDetails = (idx) => {
     setOpenTechDetails(prev => ({
@@ -23,11 +30,6 @@ function Dashboard() {
       [idx]: !prev[idx]
     }))
   }
-
-  // Reset report filter when switching family profiles
-  useEffect(() => {
-    setSelectedReportId('all')
-  }, [activeProfileId])
 
   // Layout AuthGuardInline intercepts this; fallback returning null
   if (!isLoggedIn) return null

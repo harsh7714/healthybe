@@ -12,12 +12,21 @@ export function ProfileProvider({ children }) {
 
   const activeProfile = family.find(f => f.id === activeProfileId) || family[0] || {}
 
+  if (!isLoggedIn || !userEmail) {
+    if (family.length > 0) {
+      setFamily([])
+    }
+    if (activeProfileId !== 'self') {
+      setActiveProfileId('self')
+    }
+    if (familyLoading) {
+      setFamilyLoading(false)
+    }
+  }
+
   // Fetch family profiles from MongoDB on userEmail change
   useEffect(() => {
     if (!isLoggedIn || !userEmail) {
-      setFamily([])
-      setActiveProfileId('self')
-      setFamilyLoading(false)
       return
     }
 
