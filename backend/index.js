@@ -9,10 +9,17 @@ const app = express()
 const PORT = process.env.PORT || 3001
 
 const path = require('path')
+const requestLogger = require('./middleware/requestLogger')
+const { apiLimiter } = require('./middleware/rateLimiter')
+const errorHandler = require('./middleware/errorHandler')
+const AppError = require('./utils/AppError')
 
 /* ─── Middleware ───────────────────────────────────────────────── */
 app.use(cors())
-app.use(express.json())
+app.use(requestLogger)
+app.use(apiLimiter)
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 /* ─── Database ─────────────────────────────────────────────────── */
@@ -21,11 +28,13 @@ connectDB()
 /* ─── Routes ───────────────────────────────────────────────────── */
 app.use(apiRouter)
 
-/* ─── Global error handler ─────────────────────────────────────── */
-app.use((err, _req, res, _next) => {
-  console.error('Server error:', err.message)
-  res.status(err.status || 500).json({ error: err.message })
+/* ─── 404 Handler for Undefined Routes ─────────────────────────── */
+app.all('*', (req, _res, next) => {
+  next(new AppError(`Cannot find endpoint ${req.method} ${req.originalUrl} on this server.`, 404))
 })
+
+/* ─── Global error handler ─────────────────────────────────────── */
+app.use(errorHandler)
 
 /* ─── Start ────────────────────────────────────────────────────── */
 app.listen(PORT, () => {

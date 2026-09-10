@@ -8,8 +8,8 @@ This document outlines the active development schedule, sprint milestones, and d
 
 | Day | Date | Focus Area | Status | Commit / Changes |
 |---|---|---|---|---|
-| **Day 1** | *Today* | **Frontend Code Health & Bundle Optimization** | ✅ Completed | Fixed 35 ESLint errors + Rules of Hooks violations, optimized Rollup bundle splitting (eliminating monolithic 903kB chunk), verified clean build. |
-| **Day 2** | *Upcoming* | **Backend Hardening & Centralized Error Handling** | ⏳ Scheduled | Add global async error middleware, request schema validation, express-rate-limit on auth/AI endpoints, and structured logging. |
+| **Day 1** | *2026-09-09* | **Frontend Code Health & Bundle Optimization** | ✅ Completed | Fixed 35 ESLint errors + Rules of Hooks violations, optimized Rollup bundle splitting (eliminating monolithic 903kB chunk), verified clean build. |
+| **Day 2** | *2026-09-10* | **Backend Hardening & Centralized Error Handling** | ✅ Completed | Added global `errorHandler`, `asyncHandler`, `AppError` class, request schema validators, `express-rate-limit` (auth, AI chat, uploads), and structured request logging. |
 | **Day 3** | *Upcoming* | **Interactive Vitals Trend Analytics** | ⏳ Scheduled | Visualize historical vitals (blood pressure, glucose, pulse, cholesterol) across checkups with interactive SVG/Chart visualizers. |
 | **Day 4** | *Upcoming* | **PDF Clinical Summary & Health Card Export** | ⏳ Scheduled | Client-side export of comprehensive family health profile cards and consultation summaries to downloadable PDF. |
 | **Day 5** | *Upcoming* | **Medication Schedule & Dosage Reminders** | ⏳ Scheduled | Smart timeline for daily medication dosages with adherence tracking and browser push/local notifications. |
@@ -24,7 +24,7 @@ This document outlines the active development schedule, sprint milestones, and d
 - [x] Zero ESLint errors across all React components and hooks.
 - [x] Chunk-split Vite bundles (`vendor-framework`, `vendor-jspdf`, `app`) to avoid monolithic bundle lag.
 - [x] Safe camera lifecycle management in document scanner modal.
-- [ ] Centralized API error response formatting and rate limiting.
+- [x] Centralized API error response formatting and rate limiting.
 
 ### Milestone 2: Health Insights & Clinical Visualizations (Days 3–4)
 - [ ] Vitals telemetry trend graphs (systolic/diastolic BP, blood glucose over time).
