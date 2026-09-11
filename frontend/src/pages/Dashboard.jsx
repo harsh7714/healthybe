@@ -9,6 +9,7 @@ import LabMetrics from '../components/dashboard/LabMetrics'
 import MedicationLog from '../components/dashboard/MedicationLog'
 import CheckupList from '../components/dashboard/CheckupList'
 import DietGuidelines from '../components/dashboard/DietGuidelines'
+import ExportClinicalPdfModal from '../components/ExportClinicalPdfModal'
 
 /* ─── Dashboard Component ──────────────────────────────────── */
 function Dashboard() {
@@ -17,6 +18,7 @@ function Dashboard() {
   const [openTechDetails, setOpenTechDetails] = useState({})
   const [prevProfileId, setPrevProfileId] = useState(activeProfileId)
   const [selectedReportId, setSelectedReportId] = useState('all')
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
   // Reset report filter when switching family profiles
   if (activeProfileId !== prevProfileId) {
@@ -218,28 +220,41 @@ function Dashboard() {
             </p>
           </div>
 
-          {activeReports.length > 0 && (
-            <div className="flex items-center justify-center gap-2 bg-slate-950/20 border border-slate-900 rounded-2xl px-3 sm:px-4 py-2 w-full sm:w-auto shrink-0">
-              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-extrabold whitespace-nowrap">Report Filter:</span>
-              <select
-                value={selectedReportId}
-                onChange={(e) => setSelectedReportId(e.target.value)}
-                className="bg-transparent text-teal-400 font-bold text-xs focus:outline-none cursor-pointer max-w-[180px] sm:max-w-[220px] truncate ml-1.5"
-              >
-                <option value="all">All Reports (Cumulative)</option>
-                {activeReports.map((report) => {
-                  const truncatedName = report.name.length > 20
-                    ? report.name.slice(0, 18) + '...'
-                    : report.name
-                  return (
-                    <option key={report.id} value={report.id}>
-                      {truncatedName} ({report.date})
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
+            {activeReports.length > 0 && (
+              <div className="flex items-center justify-center gap-2 bg-slate-950/20 border border-slate-900 rounded-2xl px-3 sm:px-4 py-2 w-full sm:w-auto shrink-0">
+                <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider font-extrabold whitespace-nowrap">Report Filter:</span>
+                <select
+                  value={selectedReportId}
+                  onChange={(e) => setSelectedReportId(e.target.value)}
+                  className="bg-transparent text-teal-400 font-bold text-xs focus:outline-none cursor-pointer max-w-[180px] sm:max-w-[220px] truncate ml-1.5"
+                >
+                  <option value="all">All Reports (Cumulative)</option>
+                  {activeReports.map((report) => {
+                    const truncatedName = report.name.length > 20
+                      ? report.name.slice(0, 18) + '...'
+                      : report.name
+                    return (
+                      <option key={report.id} value={report.id}>
+                        {truncatedName} ({report.date})
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsExportModalOpen(true)}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 hover:from-teal-500/30 hover:to-emerald-500/30 border border-teal-500/40 text-teal-300 hover:text-teal-200 text-xs font-semibold px-4 py-2 rounded-2xl transition-all shadow-sm shadow-teal-950/40 cursor-pointer"
+            >
+              <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Export Health PDF</span>
+            </button>
+          </div>
         </div>
 
         {/* Top Section: Vitals & Lab Telemetry */}
@@ -370,8 +385,19 @@ function Dashboard() {
           <CheckupList checkups={checkups} selectedProfile={selectedProfile} t={t} />
 
           <MedicationLog medications={medications} selectedProfile={selectedProfile} t={t} />
-
         </div>
+
+        {/* Export Clinical PDF Modal */}
+        <ExportClinicalPdfModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          profile={selectedProfile === 'all' ? { name: 'Family Consolidated Summary', relation: 'All Profiles', email: activeProfile?.email } : activeProfile}
+          vitals={vitals}
+          metrics={metrics}
+          medications={medications}
+          checkups={checkups}
+          diet={diet}
+        />
 
       </div>
     </div>
