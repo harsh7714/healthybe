@@ -10,7 +10,7 @@ This document outlines the active development schedule, sprint milestones, and d
 |---|---|---|---|---|
 | **Day 1** | *2026-09-09* | **Frontend Code Health & Bundle Optimization** | ✅ Completed | Fixed 35 ESLint errors + Rules of Hooks violations, optimized Rollup bundle splitting (eliminating monolithic 903kB chunk), verified clean build. |
 | **Day 2** | *2026-09-10* | **Backend Hardening & Centralized Error Handling** | ✅ Completed | Added global `errorHandler`, `asyncHandler`, `AppError` class, request schema validators, `express-rate-limit` (auth, AI chat, uploads), and structured request logging. |
-| **Day 3** | *Upcoming* | **Interactive Vitals Trend Analytics** | ⏳ Scheduled | Visualize historical vitals (blood pressure, glucose, pulse, cholesterol) across checkups with interactive SVG/Chart visualizers. |
+| **Day 3** | *2026-09-11* | **Interactive Vitals Trend Analytics** | ✅ Completed | Built `VitalsTrendChart` with interactive SVG trajectories (BP, Glucose, Heart Rate, Cholesterol, SpO2), target clinical bands, hover tooltips, and tabular logs. |
 | **Day 4** | *Upcoming* | **PDF Clinical Summary & Health Card Export** | ⏳ Scheduled | Client-side export of comprehensive family health profile cards and consultation summaries to downloadable PDF. |
 | **Day 5** | *Upcoming* | **Medication Schedule & Dosage Reminders** | ⏳ Scheduled | Smart timeline for daily medication dosages with adherence tracking and browser push/local notifications. |
 | **Day 6** | *Upcoming* | **Offline Vault Resilience & PWA Service Worker** | ⏳ Scheduled | Offline caching of recent reports and metadata so users can view medical files even without network access. |
@@ -27,7 +27,7 @@ This document outlines the active development schedule, sprint milestones, and d
 - [x] Centralized API error response formatting and rate limiting.
 
 ### Milestone 2: Health Insights & Clinical Visualizations (Days 3–4)
-- [ ] Vitals telemetry trend graphs (systolic/diastolic BP, blood glucose over time).
+- [x] Vitals telemetry trend graphs (systolic/diastolic BP, blood glucose over time).
 - [ ] One-click consolidated PDF export for doctor consultations.
 - [ ] Multi-profile comparison toggle in dashboard.
 

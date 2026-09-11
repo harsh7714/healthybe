@@ -248,7 +248,7 @@ function Dashboard() {
           {/* Left Panel: Vitals & Lab Measurements */}
           <div className="lg:col-span-8 space-y-6 lg:space-y-8">
             {/* Vitals Telemetry */}
-            <VitalsTelemetry vitals={vitals} selectedProfile={selectedProfile} t={t} />
+            <VitalsTelemetry vitals={vitals} selectedProfile={selectedProfile} reports={activeReports} t={t} />
 
             {/* Lab Test Measurements Table */}
             <LabMetrics metrics={metrics} selectedProfile={selectedProfile} t={t} />
