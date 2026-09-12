@@ -8,11 +8,36 @@ const apiRouter = require('./routes/api')
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Trust reverse proxies (Render, Railway, AWS ALB, Heroku)
+app.set('trust proxy', 1)
+
 const path = require('path')
 const requestLogger = require('./middleware/requestLogger')
 const { apiLimiter } = require('./middleware/rateLimiter')
 const errorHandler = require('./middleware/errorHandler')
 const AppError = require('./utils/AppError')
+const mongoose = require('mongoose')
+
+/* ─── Health / Root Endpoints (Deployment & Load Balancers) ─────── */
+// Handle HEAD and GET for / and /health to satisfy cloud deployment probes
+app.route('/')
+  .get((_req, res) => {
+    res.status(200).json({ status: 'ok', service: 'HealthyBe API', version: '1.1.0' })
+  })
+  .head((_req, res) => {
+    res.status(200).end()
+  })
+
+app.route('/health')
+  .get((_req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    })
+  })
+  .head((_req, res) => {
+    res.status(200).end()
+  })
 
 /* ─── Middleware ───────────────────────────────────────────────── */
 app.use(cors())
