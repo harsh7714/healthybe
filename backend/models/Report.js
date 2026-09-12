@@ -10,6 +10,8 @@ const reportSchema = new mongoose.Schema({
   size:      { type: String },
   type:      { type: String, enum: ['PDF', 'IMAGE'], default: 'PDF' },
   analysis:  { type: mongoose.Schema.Types.Mixed, default: null },
+  status:    { type: String, enum: ['PROCESSING', 'COMPLETED', 'FAILED'], default: 'PROCESSING', index: true },
+  errorMessage: { type: String, default: null },
   date:      { type: String },
 }, { timestamps: true })
 

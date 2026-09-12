@@ -115,16 +115,6 @@ function Reports() {
     <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 px-4 sm:px-12 lg:px-24">
       <div className="max-w-5xl mx-auto space-y-8">
 
-        {/* ── Upload Loading Overlay ────────────────────────────── */}
-        {isUploading && (
-          <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center backdrop-blur-md animate-fade-in-fast">
-            <Spinner size="xl">
-              <span className="text-slate-300 font-semibold text-xs sm:text-sm tracking-wider leading-relaxed">
-                Please hold on until we are processing.
-              </span>
-            </Spinner>
-          </div>
-        )}
 
         {/* ── Success Toast ─────────────────────────────────────── */}
         {successMsg && (
@@ -281,11 +271,16 @@ function Reports() {
                             >
                               ✏️
                             </button>
-                            {hasAI && (
-                             <Badge variant="normal" className="px-1.5 py-0.5 text-[9px]">
+                            {report.status === 'PROCESSING' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                                <Spinner size="xs" color="text-teal-400" />
+                                <span>Analyzing...</span>
+                              </span>
+                            ) : hasAI ? (
+                              <Badge variant="normal" className="px-1.5 py-0.5 text-[9px]">
                                 AI ✓
                               </Badge>
-                            )}
+                            ) : null}
                           </div>
                           <p className="text-xs text-slate-500 mt-0.5">
                             {profile?.name || 'Unknown'} · {report.date} · {report.size}

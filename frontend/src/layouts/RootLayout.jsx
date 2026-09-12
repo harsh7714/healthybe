@@ -4,6 +4,7 @@ import Footer from '../components/Footer'
 import { Outlet, useLocation } from 'react-router-dom'
 import { HealthProvider, useHealth } from '../context/HealthContext'
 import { FloatingChatBubble } from '../components/FloatingChatBubble'
+import { UploadProgressModal } from '../components/UploadProgressModal'
 
 function AuthGuardInline() {
   const { loginUser, sendOtp, verifyOtp, resetPassword } = useHealth()
@@ -477,7 +478,7 @@ function AuthGuardInline() {
 function RootLayout() {
   const location = useLocation()
   const isChatRoute = location.pathname === '/chat'
-  const { isLoggedIn } = useHealth()
+  const { isLoggedIn, uploadModalState, dismissUploadModal } = useHealth()
 
   // Define protected paths
   const isProtectedRoute = ['/chat', '/dashboard', '/reports', '/settings'].includes(location.pathname)
@@ -506,6 +507,15 @@ function RootLayout() {
           <Outlet />
         )}
       </div>
+      <UploadProgressModal
+        isOpen={uploadModalState?.isOpen}
+        stage={uploadModalState?.stage}
+        progress={uploadModalState?.progress}
+        filename={uploadModalState?.filename}
+        fileSize={uploadModalState?.fileSize}
+        errorMessage={uploadModalState?.errorMessage}
+        onDismiss={dismissUploadModal}
+      />
       {isLoggedIn && !isChatRoute && <FloatingChatBubble />}
       {(!isChatRoute || !isLoggedIn) && <Footer />}
     </div>

@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const Report = require('../models/Report')
 const { presign, uploadToS3, deleteFromS3 } = require('../services/s3Service')
+const aiQueue = require('../services/aiQueue')
 const { analyzeWithGemini } = require('../services/geminiService')
 const { mergeAnalysisIntoProfileHealthData } = require('../services/profileService')
 const getUserId = require('../utils/getUserId')
@@ -71,10 +72,12 @@ router.get('/api/reports', asyncHandler(async (req, res) => {
         s3Key:     doc.s3Key,
         s3Url,
         mimeType:  doc.mimeType,
-        size:      doc.size,
-        type:      doc.type,
-        analysis:  doc.analysis,
-        date:      doc.date,
+        size:         doc.size,
+        type:         doc.type,
+        status:       doc.status || 'COMPLETED',
+        errorMessage: doc.errorMessage || null,
+        analysis:     doc.analysis,
+        date:         doc.date,
       }
     })
   )
@@ -134,23 +137,9 @@ router.post('/api/upload', uploadLimiter, upload.single('file'), asyncHandler(as
     console.log(`💾 Fallback: Storing report in MongoDB directly as Base64 data URI`)
   }
 
-  // Gemini AI analysis
-  let analysis = null
-  try {
-    analysis = await analyzeWithGemini(file.buffer, file.mimetype)
-    console.log(`🤖 Gemini OK: ${file.originalname}`)
-  } catch (aiErr) {
-    console.warn(`⚠️  Gemini failed (non-fatal): ${aiErr.message}`)
-    analysis = {
-      vitals: {},
-      metrics: [],
-      checkup: { type: 'Uploaded Document', findings: 'AI analysis unavailable for this document.' },
-      medications: [],
-      diet: [],
-    }
-  }
+  const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' })
 
-  // Save metadata/file reference to MongoDB
+  // Save initial metadata/file reference to MongoDB with status: 'PROCESSING'
   const doc = await Report.create({
     userId,
     name:      file.originalname,
@@ -160,14 +149,23 @@ router.post('/api/upload', uploadLimiter, upload.single('file'), asyncHandler(as
     mimeType:  file.mimetype,
     size:      `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
     type:      file.mimetype.includes('image') ? 'IMAGE' : 'PDF',
-    analysis,
-    date: new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }),
+    status:    'PROCESSING',
+    analysis:  null,
+    date:      dateStr,
   })
 
-  console.log(`💾 MongoDB saved: ${doc._id}`)
+  console.log(`💾 MongoDB saved: ${doc._id} (status: PROCESSING)`)
 
-  // Aggregate and update Profile dashboard info
-  await mergeAnalysisIntoProfileHealthData(userId, profileId, analysis, file.originalname, doc.date)
+  // Enqueue AI analysis asynchronously into concurrency-controlled worker queue
+  aiQueue.enqueue({
+    reportId:  doc._id,
+    buffer:    file.buffer,
+    mimeType:  file.mimetype,
+    userId,
+    profileId,
+    fileName:  file.originalname,
+    date:      dateStr,
+  })
 
   // Make sure we return a lightweight path instead of huge base64 in response to client
   let clientS3Url = s3Url
@@ -176,16 +174,38 @@ router.post('/api/upload', uploadLimiter, upload.single('file'), asyncHandler(as
   }
 
   res.status(201).json({
-    id:       doc._id,
-    name:     doc.name,
+    id:        doc._id,
+    name:      doc.name,
     profileId: doc.profileId,
-    s3Key:    fileKey,
-    s3Url:    clientS3Url,
-    mimeType: file.mimetype,
-    size:     doc.size,
-    type:     doc.type,
-    analysis,
-    date:     doc.date,
+    s3Key:     fileKey,
+    s3Url:     clientS3Url,
+    mimeType:  file.mimetype,
+    size:      doc.size,
+    type:      doc.type,
+    status:    'PROCESSING',
+    analysis:  null,
+    date:      doc.date,
+  })
+}))
+
+/* GET /api/reports/:id/status
+   Allows frontend to poll the processing state of an uploaded report */
+router.get('/api/reports/:id/status', asyncHandler(async (req, res) => {
+  const userId = getUserId(req)
+  const report = await Report.findOne({ _id: req.params.id, userId }).select('status analysis errorMessage name profileId date size type')
+  if (!report) {
+    throw new AppError('Report not found.', 404)
+  }
+  res.json({
+    id:           report._id,
+    status:       report.status,
+    analysis:     report.analysis,
+    errorMessage: report.errorMessage,
+    name:         report.name,
+    profileId:    report.profileId,
+    date:         report.date,
+    size:         report.size,
+    type:         report.type,
   })
 }))
 

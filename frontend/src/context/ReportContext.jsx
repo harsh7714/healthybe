@@ -318,6 +318,21 @@ export function ReportProvider({ children }) {
   const [uploadError, setUploadError] = useState(null)
   const [globalStagedFile, setGlobalStagedFile] = useState(null)
 
+  // Standard upload progress modal state
+  const [uploadModalState, setUploadModalState] = useState({
+    isOpen: false,
+    stage: 'uploading', // 'uploading' | 'analyzing' | 'completed' | 'failed'
+    progress: 0,
+    filename: '',
+    fileSize: '',
+    reportId: null,
+    errorMessage: null,
+  })
+
+  const dismissUploadModal = () => {
+    setUploadModalState(prev => ({ ...prev, isOpen: false }))
+  }
+
   if (!isLoggedIn || !userEmail) {
     if (reports.length > 0) {
       setReports([])
@@ -341,22 +356,66 @@ export function ReportProvider({ children }) {
       .then(r => r.ok ? r.json() : Promise.reject('Server error'))
       .then(data => {
         setReports(data.map(r => ({
-          id:        r.id || r._id,
-          name:      r.name,
-          dbKey:     r.s3Key,
-          profileId: r.profileId,
-          date:      r.date,
-          size:      r.size,
-          type:      r.type,
-          pages:     r.s3Url ? [r.s3Url] : [],
-          s3Url:     r.s3Url,
-          s3Key:     r.s3Key,
-          analysis:  r.analysis,
+          id:           r.id || r._id,
+          name:         r.name,
+          dbKey:        r.s3Key,
+          profileId:    r.profileId,
+          date:         r.date,
+          size:         r.size,
+          type:         r.type,
+          status:       r.status || 'COMPLETED',
+          errorMessage: r.errorMessage || null,
+          pages:        r.s3Url ? [r.s3Url] : [],
+          s3Url:        r.s3Url,
+          s3Key:        r.s3Key,
+          analysis:     r.analysis,
         })))
       })
       .catch(err => console.warn('Could not load reports from backend:', err))
       .finally(() => setReportsLoading(false))
   }, [userEmail, isLoggedIn])
+
+  // Poll for any reports that are currently in PROCESSING state
+  useEffect(() => {
+    const processingReports = reports.filter(r => r.status === 'PROCESSING')
+    if (processingReports.length === 0 || !userEmail) return
+
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+    const interval = setInterval(async () => {
+      let anyFinished = false
+      for (const pr of processingReports) {
+        try {
+          const res = await fetch(`${apiBase}/api/reports/${pr.id}/status`, {
+            headers: { 'x-user-email': userEmail }
+          })
+          if (res.ok) {
+            const statusData = await res.json()
+            if (statusData.status === 'COMPLETED' || statusData.status === 'FAILED') {
+              anyFinished = true
+              setReports(prev => prev.map(item => item.id === pr.id ? {
+                ...item,
+                status: statusData.status,
+                analysis: statusData.analysis,
+                errorMessage: statusData.errorMessage
+              } : item))
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (anyFinished) {
+        try {
+          const pRes = await fetch(`${apiBase}/api/profiles`, { headers: { 'x-user-email': userEmail } })
+          if (pRes.ok) {
+            const pData = await pRes.json()
+            setFamily(pData)
+          }
+        } catch (_) {}
+      }
+    }, 2500)
+
+    return () => clearInterval(interval)
+  }, [reports, userEmail, setFamily])
 
   const renameReport = (id, newName) => {
     setReports(prev => prev.map(r => r.id === id ? { ...r, name: newName } : r))
@@ -406,69 +465,179 @@ export function ReportProvider({ children }) {
     }
   }
 
+  const pollReportStatus = (reportId) => {
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+    let attempts = 0
+    const maxAttempts = 40 // ~80-100s polling window
+
+    const poller = setInterval(async () => {
+      attempts++
+      try {
+        const res = await fetch(`${apiBase}/api/reports/${reportId}/status`, {
+          headers: { 'x-user-email': userEmail }
+        })
+        if (!res.ok) throw new Error('Status check failed')
+
+        const statusData = await res.json()
+
+        if (statusData.status === 'COMPLETED') {
+          clearInterval(poller)
+          setReports(prev => prev.map(r => r.id === reportId ? {
+            ...r,
+            status: 'COMPLETED',
+            analysis: statusData.analysis,
+            errorMessage: null
+          } : r))
+
+          setUploadModalState(prev => {
+            if (prev.reportId === reportId) {
+              return { ...prev, stage: 'completed' }
+            }
+            return prev
+          })
+
+          // Refresh family dashboard metrics
+          try {
+            const pRes = await fetch(`${apiBase}/api/profiles`, { headers: { 'x-user-email': userEmail } })
+            if (pRes.ok) {
+              const pData = await pRes.json()
+              setFamily(pData)
+            }
+          } catch (_) {}
+
+          // Auto-close modal after 2.5 seconds if completed
+          setTimeout(() => {
+            setUploadModalState(prev => prev.reportId === reportId ? { ...prev, isOpen: false } : prev)
+          }, 2500)
+        } else if (statusData.status === 'FAILED') {
+          clearInterval(poller)
+          setReports(prev => prev.map(r => r.id === reportId ? {
+            ...r,
+            status: 'FAILED',
+            errorMessage: statusData.errorMessage
+          } : r))
+          setUploadModalState(prev => {
+            if (prev.reportId === reportId) {
+              return { ...prev, stage: 'failed', errorMessage: statusData.errorMessage || 'AI analysis could not complete.' }
+            }
+            return prev
+          })
+        }
+      } catch (err) {
+        console.warn('Status poll error:', err)
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(poller)
+      }
+    }, 2000)
+  }
+
   const uploadReportToS3 = async (file, profileId, customFilename = null) => {
     if (!userEmail) return { success: false, error: 'Not logged in' }
-    setIsUploading(true)
-    setUploadError(null)
 
     const finalFilename = customFilename || file.name
+    const sizeStr = `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+
+    setIsUploading(true)
+    setUploadError(null)
+    setUploadModalState({
+      isOpen: true,
+      stage: 'uploading',
+      progress: 0,
+      filename: finalFilename,
+      fileSize: sizeStr,
+      reportId: null,
+      errorMessage: null,
+    })
 
     const formData = new FormData()
     formData.append('file', file, finalFilename)
     formData.append('profileId', profileId)
 
-    try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-      const res = await fetch(`${apiBase}/api/upload`, {
-        method: 'POST',
-        headers: { 'x-user-email': userEmail },
-        body: formData,
-      })
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Upload failed' }))
-        throw new Error(err.error || `Server error ${res.status}`)
-      }
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', `${apiBase}/api/upload`)
+      xhr.setRequestHeader('x-user-email', userEmail)
 
-      const data = await res.json()
-      const isImage = file.type.includes('image')
-
-      const newDoc = {
-        id: data.id || `r_${Math.floor(Math.random() * 9000 + 1000)}`,
-        name: finalFilename,
-        dbKey: data.s3Key || data.fileKey,
-        profileId,
-        date: data.date || new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }),
-        size: data.size,
-        type: isImage ? 'IMAGE' : 'PDF',
-        pages: data.s3Url ? [data.s3Url] : [],
-        s3Url: data.s3Url,
-        s3Key: data.s3Key || data.fileKey,
-        analysis: data.analysis,
-      }
-
-      setReports(prev => [newDoc, ...prev])
-
-      // Refresh family profiles to fetch updated healthData
-      try {
-        const profilesRes = await fetch(`${apiBase}/api/profiles`, {
-          headers: { 'x-user-email': userEmail }
-        })
-        if (profilesRes.ok) {
-          const profilesData = await profilesRes.json()
-          setFamily(profilesData)
+      // Determinate progress during AWS transmission
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.min(Math.round((event.loaded / event.total) * 100), 99)
+          setUploadModalState(prev => ({ ...prev, progress: percent }))
         }
-      } catch (err) {
-        console.warn('Could not reload profiles after upload:', err)
       }
 
-      return { success: true, report: newDoc }
-    } catch (err) {
-      setUploadError(err.message)
-      return { success: false, error: err.message }
-    } finally {
-      setIsUploading(false)
-    }
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            const isImage = file.type.includes('image')
+
+            const newDoc = {
+              id: data.id || `r_${Math.floor(Math.random() * 9000 + 1000)}`,
+              name: finalFilename,
+              dbKey: data.s3Key || data.fileKey,
+              profileId,
+              date: data.date || new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }),
+              size: data.size || sizeStr,
+              type: isImage ? 'IMAGE' : 'PDF',
+              status: data.status || 'PROCESSING',
+              errorMessage: null,
+              pages: data.s3Url ? [data.s3Url] : [],
+              s3Url: data.s3Url,
+              s3Key: data.s3Key || data.fileKey,
+              analysis: data.analysis || null,
+            }
+
+            // Immediately add to reports list so the user sees it in their reports
+            setReports(prev => [newDoc, ...prev.filter(r => r.id !== newDoc.id)])
+
+            // Switch modal stage to analyzing with AI
+            setUploadModalState(prev => ({
+              ...prev,
+              stage: 'analyzing',
+              progress: 100,
+              reportId: newDoc.id,
+            }))
+
+            setIsUploading(false)
+
+            // Start polling for AI completion
+            pollReportStatus(newDoc.id)
+
+            resolve({ success: true, report: newDoc })
+          } catch (err) {
+            setUploadError('Failed to parse server response.')
+            setUploadModalState(prev => ({ ...prev, stage: 'failed', errorMessage: 'Invalid server response.' }))
+            setIsUploading(false)
+            resolve({ success: false, error: 'Failed to parse response' })
+          }
+        } else {
+          let errMsg = 'Upload failed'
+          try {
+            const errData = JSON.parse(xhr.responseText)
+            errMsg = errData.error || errMsg
+          } catch (_) {}
+          setUploadError(errMsg)
+          setUploadModalState(prev => ({ ...prev, stage: 'failed', errorMessage: errMsg }))
+          setIsUploading(false)
+          resolve({ success: false, error: errMsg })
+        }
+      }
+
+      xhr.onerror = () => {
+        const errMsg = 'Network error during upload.'
+        setUploadError(errMsg)
+        setUploadModalState(prev => ({ ...prev, stage: 'failed', errorMessage: errMsg }))
+        setIsUploading(false)
+        resolve({ success: false, error: errMsg })
+      }
+
+      xhr.send(formData)
+    })
   }
 
   const getDataForReport = (report) => {
@@ -614,6 +783,8 @@ export function ReportProvider({ children }) {
       uploadReportSync,
       deleteReport,
       uploadReportToS3,
+      uploadModalState,
+      dismissUploadModal,
       getDerivedHealthData,
       getReportAnalysis
     }}>
