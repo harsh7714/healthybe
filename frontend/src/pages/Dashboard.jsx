@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
 import { Card, CardHeader } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -10,15 +11,26 @@ import MedicationLog from '../components/dashboard/MedicationLog'
 import CheckupList from '../components/dashboard/CheckupList'
 import DietGuidelines from '../components/dashboard/DietGuidelines'
 import ExportClinicalPdfModal from '../components/ExportClinicalPdfModal'
+import ChatHistoryDashboard from '../components/dashboard/ChatHistoryDashboard'
 
 /* ─── Dashboard Component ──────────────────────────────────── */
 function Dashboard() {
   const { family, activeProfileId, activeProfile, getDerivedHealthData, isLoggedIn, familyLoading, reports = [], getReportAnalysis } = useHealth()
   const { t, lang } = useTranslation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [dashboardTab, setDashboardTab] = useState(() => {
+    return searchParams.get('tab') === 'chat' ? 'chatHistory' : 'telemetry'
+  })
   const [openTechDetails, setOpenTechDetails] = useState({})
   const [prevProfileId, setPrevProfileId] = useState(activeProfileId)
   const [selectedReportId, setSelectedReportId] = useState('all')
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'chat') {
+      setDashboardTab('chatHistory')
+    }
+  }, [searchParams])
 
   // Reset report filter when switching family profiles
   if (activeProfileId !== prevProfileId) {
@@ -257,8 +269,50 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Top Section: Vitals & Lab Telemetry */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        {/* ── Dashboard Primary View Switcher ── */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-900/80 pb-3">
+          <div className="flex items-center gap-2 p-1 bg-slate-950/80 border border-slate-900 rounded-2xl w-fit">
+            <button
+              onClick={() => {
+                setDashboardTab('telemetry')
+                setSearchParams({})
+              }}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${
+                dashboardTab === 'telemetry'
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-black shadow-md font-black'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>📊 Clinical Telemetry & Vault</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setDashboardTab('chatHistory')
+                setSearchParams({ tab: 'chat' })
+              }}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${
+                dashboardTab === 'chatHistory'
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-black shadow-md font-black'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>💬 AI Consultations & Previous Chats</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                dashboardTab === 'chatHistory' ? 'bg-black/20 text-black' : 'bg-slate-800 text-teal-400'
+              }`}>
+                NEW
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {dashboardTab === 'chatHistory' ? (
+          <ChatHistoryDashboard />
+        ) : (
+          <>
+            {/* Top Section: Vitals & Lab Telemetry */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* Left Panel: Vitals & Lab Measurements */}
           <div className="lg:col-span-8 space-y-6 lg:space-y-8">
@@ -386,6 +440,8 @@ function Dashboard() {
 
           <MedicationLog medications={medications} selectedProfile={selectedProfile} t={t} />
         </div>
+      </>
+    )}
 
         {/* Export Clinical PDF Modal */}
         <ExportClinicalPdfModal

@@ -1,11 +1,68 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai')
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+/**
+ * Priority list of candidate models for automatic failover.
+ * If Google's servers experience a 503 load spike on one model,
+ * the system seamlessly falls back to the next available model.
+ */
+function getCandidateModels() {
+  const primary = process.env.GEMINI_MODEL || 'gemini-3.6-flash'
+  const fallbackList = [
+    primary,
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-flash-latest',
+    'gemini-3.8-flash'
+  ]
+  return [...new Set(fallbackList)]
+}
+
+function getGenAI() {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured in the backend environment.')
+  }
+  return new GoogleGenerativeAI(apiKey)
+}
+
+/**
+ * Executes generateContent with automatic retry and model cascade on 503 / high demand spikes.
+ */
+async function generateWithResilience(contents) {
+  const genAI = getGenAI()
+  const candidateModels = getCandidateModels()
+  let lastError = null
+
+  for (const modelName of candidateModels) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName })
+      const result = await model.generateContent(contents)
+      return result
+    } catch (err) {
+      lastError = err
+      const msg = err.message || ''
+      const isTransitory =
+        err.status === 503 ||
+        err.status === 429 ||
+        msg.includes('503') ||
+        msg.includes('high demand') ||
+        msg.includes('temporary') ||
+        msg.includes('Service Unavailable')
+
+      if (isTransitory) {
+        console.warn(`[Gemini Resilience] Model ${modelName} experienced high demand / 503. Cascading to next candidate...`)
+        continue
+      }
+      // If it's a fatal error (like invalid prompt or non-transient), break and throw
+      throw err
+    }
+  }
+
+  throw lastError
+}
 
 /* ─── Report Analysis (for uploaded PDFs/images) ─────────────── */
 async function analyzeWithGemini(buffer, mimeType) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
-
   const prompt = `You are a medical document analyser. Read this medical report image or PDF and extract structured health data.
 
 Return ONLY a raw JSON object — no markdown, no code fences, no explanation. Use exactly this shape:
@@ -35,7 +92,7 @@ Rules:
 - If a section has no data, use {} or []
 - If this is not a medical document, return all empty with type "Unknown Document" and findings "No medical data found."`
 
-  const result = await model.generateContent([
+  const result = await generateWithResilience([
     prompt,
     { inlineData: { data: buffer.toString('base64'), mimeType } },
   ])
@@ -47,8 +104,6 @@ Rules:
 
 /* ─── Conversational Health Chat ─────────────────────────────── */
 async function chatWithGemini(userMessage, healthContext, language = 'English') {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
-
   const systemPrompt = `You are HealthyBe AI, an expert medical assistant built into the HealthyBe health management platform. You help users understand their health data, medical reports, and provide evidence-based health advice.
 
 PATIENT CONTEXT:
@@ -65,7 +120,7 @@ GUIDELINES:
 - If no health data is available, provide general evidence-based health information
 - LANGUAGE REQUIREMENT: You MUST respond in the language "${language}". All explanations, medical terms explanation, and recommendations must be fully written in "${language}".`
 
-  const result = await model.generateContent([
+  const result = await generateWithResilience([
     systemPrompt,
     `\n\nUser question: ${userMessage}`
   ])
@@ -77,4 +132,3 @@ module.exports = {
   analyzeWithGemini,
   chatWithGemini,
 }
-
