@@ -14,7 +14,7 @@ const translations = {
     'nav.dashboard': 'Dashboard',
     'nav.chat': 'AI Chat',
     'nav.reports': 'Reports',
-    'nav.emergency': 'Emergency',
+    'nav.emergency': 'First Aid',
     'nav.settings': 'Settings',
     'nav.signIn': 'Sign In',
     'nav.switchProfile': 'Switch Profile',

@@ -5,11 +5,11 @@ function DietGuidelines({ diet, selectedProfile, family, t }) {
   return (
     <Card className="p-6 space-y-4 bg-slate-950/40">
       <CardHeader className="pb-2">
-        <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">
-          {t('dashboard.nutritionTitle')}
+        <h3 className="font-bold text-base text-slate-100">
+          🥗 Food &amp; Diet Tips
         </h3>
-        <span className="text-[9px] text-teal-400 font-black uppercase tracking-widest font-mono">
-          {t('common.active')}
+        <span className="text-xs text-teal-400 font-medium">
+          Personalised for you
         </span>
       </CardHeader>
 

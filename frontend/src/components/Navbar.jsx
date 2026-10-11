@@ -129,6 +129,7 @@ function Navbar() {
       )}
 
       {/* 1. DESKTOP FLOATING NAVBAR */}
+      {location.pathname !== '/chat' && (
       <nav className="hidden md:flex fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/80 px-6 py-3 rounded-full items-center justify-between shadow-2xl transition-all duration-300">
         
         {/* Brand Logo */}
@@ -261,6 +262,7 @@ function Navbar() {
           )}
         </div>
       </nav>
+      )}
 
       {/* 2. MOBILE TOP BAR */}
       {location.pathname !== '/chat' && (

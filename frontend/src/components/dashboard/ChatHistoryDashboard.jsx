@@ -9,42 +9,29 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
   const navigate = useNavigate()
 
   const [sessions, setSessions] = useState([])
-  const [gallery, setGallery] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProfileFilter, setSelectedProfileFilter] = useState('all')
-  const [onlyVisuals, setOnlyVisuals] = useState(false)
-  const [activeTab, setActiveTab] = useState('sessions') // 'sessions' | 'gallery'
 
   // Modal states
   const [selectedSessionForModal, setSelectedSessionForModal] = useState(null)
   const [modalLoading, setModalLoading] = useState(false)
-  const [activeLightboxImage, setActiveLightboxImage] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
 
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-  // Fetch chat sessions and gallery from backend
+  // Fetch chat sessions from backend
   const fetchData = async () => {
     setLoading(true)
     setError('')
     try {
       const headers = { 'x-user-email': userEmail || 'self' }
-
-      const [sessRes, galRes] = await Promise.all([
-        fetch(`${apiBase}/api/chat/sessions`, { headers }),
-        fetch(`${apiBase}/api/chat/gallery`, { headers })
-      ])
+      const sessRes = await fetch(`${apiBase}/api/chat/sessions`, { headers })
 
       if (sessRes.ok) {
         const sessData = await sessRes.json()
         setSessions(sessData.sessions || [])
-      }
-
-      if (galRes.ok) {
-        const galData = await galRes.json()
-        setGallery(galData.gallery || [])
       }
     } catch (err) {
       console.error('Failed to load chat history:', err)
@@ -106,9 +93,6 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
     if (selectedProfileFilter !== 'all' && session.profileId !== selectedProfileFilter) {
       return false
     }
-    if (onlyVisuals && !session.hasImages) {
-      return false
-    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
       const titleMatch = session.title?.toLowerCase().includes(q)
@@ -122,27 +106,9 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
     return true
   })
 
-  // Filtered gallery items
-  const filteredGallery = gallery.filter(item => {
-    if (selectedProfileFilter !== 'all' && item.profileId !== selectedProfileFilter) {
-      return false
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim()
-      const promptMatch = item.prompt?.toLowerCase().includes(q)
-      const captionMatch = item.caption?.toLowerCase().includes(q)
-      const titleMatch = item.sessionTitle?.toLowerCase().includes(q)
-      if (!promptMatch && !captionMatch && !titleMatch) {
-        return false
-      }
-    }
-    return true
-  })
-
   // Metrics
   const totalConsultations = sessions.length
   const totalMessages = sessions.reduce((sum, s) => sum + (s.messageCount || 0), 0)
-  const totalVisuals = gallery.length
   const latestDate = sessions[0]?.lastMessageAt
     ? new Date(sessions[0].lastMessageAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
     : 'None'
@@ -177,14 +143,14 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
           </div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-tr from-slate-950 via-slate-900/40 to-slate-950 border border-slate-900/80 hover:border-purple-500/30 transition-all">
+        <Card className="p-4 bg-gradient-to-tr from-slate-950 via-slate-900/40 to-slate-950 border border-slate-900/80 hover:border-cyan-500/30 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Medical Visuals</span>
-            <span className="p-2 rounded-xl bg-purple-500/10 text-purple-400 text-xs">🎨</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Advice Exchanged</span>
+            <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 text-xs">⚡</span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-purple-300 font-mono">{totalVisuals}</span>
-            <span className="text-[10px] text-slate-500">generated</span>
+            <span className="text-2xl font-black text-white font-mono">{totalMessages}</span>
+            <span className="text-[10px] text-slate-500">messages</span>
           </div>
         </Card>
 
@@ -200,42 +166,12 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
         </Card>
       </div>
 
-      {/* ── Control Bar: Mode Toggle + Search + Filters + New Chat Button ── */}
+      {/* ── Control Bar: Search + Filters + New Chat Button ── */}
       <Card className="p-4 bg-slate-950/50 border border-slate-900 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Mode Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-900/70 border border-slate-800/80 rounded-xl w-fit">
-            <button
-              onClick={() => setActiveTab('sessions')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
-                activeTab === 'sessions'
-                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-black shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span>💬 Consultations</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                activeTab === 'sessions' ? 'bg-black/20 text-black' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {sessions.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('gallery')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
-                activeTab === 'gallery'
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span>🎨 Visuals Gallery</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                activeTab === 'gallery' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {gallery.length}
-              </span>
-            </button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-slate-100">Consultation Records</span>
+            <Badge variant="teal" className="text-[10px]">{filteredSessions.length} total</Badge>
           </div>
 
           {/* Action: Start New Chat */}
@@ -256,7 +192,7 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search past consultations, topics, advice, visuals..."
+              placeholder="Search past consultations, topics, advice..."
               className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-200 focus:outline-none focus:border-teal-500/50 transition-colors placeholder:text-slate-500"
             />
             <svg
@@ -292,28 +228,12 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
             </select>
           </div>
 
-          {/* Visuals Only Toggle (for sessions tab) */}
-          {activeTab === 'sessions' && (
-            <button
-              onClick={() => setOnlyVisuals(!onlyVisuals)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                onlyVisuals
-                  ? 'bg-purple-950/40 border-purple-500/50 text-purple-300'
-                  : 'bg-slate-900/30 border-slate-800 text-slate-400 hover:text-slate-300'
-              }`}
-            >
-              <span>🖼️ With Visuals</span>
-              {onlyVisuals && <span className="text-[10px] text-purple-400 font-mono">✓</span>}
-            </button>
-          )}
-
           {/* Reset Filters */}
-          {(searchQuery || selectedProfileFilter !== 'all' || onlyVisuals) && (
+          {(searchQuery || selectedProfileFilter !== 'all') && (
             <button
               onClick={() => {
                 setSearchQuery('')
                 setSelectedProfileFilter('all')
-                setOnlyVisuals(false)
               }}
               className="text-xs text-slate-500 hover:text-slate-300 underline font-medium"
             >
@@ -339,7 +259,7 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
             Retry
           </button>
         </div>
-      ) : activeTab === 'sessions' ? (
+      ) : (
         /* ── SESSIONS LIST ── */
         filteredSessions.length === 0 ? (
           <Card className="p-12 text-center space-y-4 bg-slate-950/30 border border-dashed border-slate-800/80">
@@ -403,11 +323,6 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {session.hasImages && (
-                          <Badge variant="info" className="bg-purple-950/50 text-purple-300 border-purple-800/40 text-[9px] px-1.5 py-0.5">
-                            🎨 {session.imageCount} visual{session.imageCount > 1 ? 's' : ''}
-                          </Badge>
-                        )}
                         <span className="text-[9px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
                           {session.messageCount} msg{session.messageCount > 1 ? 's' : ''}
                         </span>
@@ -436,27 +351,6 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
                           >
                             #{tag}
                           </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Image Thumbnails Strip */}
-                    {session.imageThumbnails && session.imageThumbnails.length > 0 && (
-                      <div className="flex gap-2 pt-1 overflow-x-auto no-scrollbar">
-                        {session.imageThumbnails.map((thumb, idx) => (
-                          <div
-                            key={idx}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setActiveLightboxImage({ url: thumb.url, title: session.title })
-                            }}
-                            className="w-16 h-14 rounded-lg overflow-hidden border border-slate-800 hover:border-purple-500 cursor-pointer shrink-0 transition-transform hover:scale-105 relative group/thumb"
-                          >
-                            <img src={thumb.url} alt="Medical visual" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center text-[10px] text-white">
-                              🔍
-                            </div>
-                          </div>
                         ))}
                       </div>
                     )}
@@ -499,106 +393,6 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
             })}
           </div>
         )
-      ) : (
-        /* ── VISUALS GALLERY ── */
-        filteredGallery.length === 0 ? (
-          <Card className="p-12 text-center space-y-4 bg-slate-950/30 border border-dashed border-slate-800/80">
-            <div className="w-12 h-12 rounded-2xl bg-purple-950/40 border border-purple-800/30 flex items-center justify-center mx-auto text-xl">
-              🎨
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-200">No Generated Visuals Yet</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Generate medical infographics, anatomy guides, and meal diagrams directly inside the chat!
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/chat')}
-              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-md"
-            >
-              Open Chat to Generate Visuals
-            </button>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredGallery.map((item, idx) => (
-              <Card
-                key={item.id || idx}
-                className="overflow-hidden bg-slate-950/60 border border-slate-900 hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between group shadow-xl"
-              >
-                <div>
-                  {/* Image Container with Hover Overlay */}
-                  <div
-                    onClick={() => setActiveLightboxImage({ url: item.imageUrl, title: item.prompt, caption: item.caption })}
-                    className="relative aspect-video w-full overflow-hidden bg-slate-900 cursor-pointer"
-                  >
-                    <img
-                      src={item.imageUrl}
-                      alt={item.prompt}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80" />
-                    
-                    {/* Badge */}
-                    <div className="absolute top-2.5 right-2.5">
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-purple-300 border border-purple-500/30">
-                        AI VISUAL
-                      </span>
-                    </div>
-
-                    <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between text-white text-[10px]">
-                      <span className="font-mono text-slate-300 truncate max-w-[180px]">{item.profileName}</span>
-                      <span className="text-teal-400 font-bold flex items-center gap-1">
-                        🔍 Full View
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="p-4 space-y-2">
-                    <h4 className="text-xs font-bold text-slate-100 group-hover:text-purple-300 transition-colors line-clamp-1">
-                      {item.prompt}
-                    </h4>
-
-                    {item.caption && (
-                      <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                        {item.caption}
-                      </p>
-                    )}
-
-                    {/* Tags */}
-                    {item.tags && item.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {item.tags.map((t, tIdx) => (
-                          <span
-                            key={tIdx}
-                            className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400"
-                          >
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Footer Action */}
-                <div className="p-3 bg-slate-900/30 border-t border-slate-900 flex items-center justify-between text-[10px]">
-                  <span className="text-slate-500 font-mono">{item.sessionTitle?.slice(0, 20)}...</span>
-                  <button
-                    type="button"
-                    onClick={() => navigateToChatSession(item.sessionId)}
-                    className="text-teal-400 hover:text-teal-300 font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Jump to Chat</span>
-                    <span>➔</span>
-                  </button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )
       )}
 
       {/* ── TRANSCRIPT PREVIEW MODAL ── */}
@@ -638,31 +432,15 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
                       <span>{msg.time}</span>
                     </div>
 
-                    {msg.isImage ? (
-                      <div className="max-w-md rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 p-2 space-y-2">
-                        <img
-                          src={msg.imageUrl}
-                          alt={msg.imagePrompt || 'Visual'}
-                          className="w-full h-auto rounded-xl cursor-pointer hover:opacity-95 transition-opacity"
-                          onClick={() => setActiveLightboxImage({ url: msg.imageUrl, title: msg.imagePrompt, caption: msg.imageCaption })}
-                        />
-                        {msg.imageCaption && (
-                          <p className="text-xs text-slate-300 px-1 leading-relaxed">
-                            {msg.imageCaption}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <div
-                        className={`text-xs p-3.5 rounded-2xl leading-relaxed max-w-lg ${
-                          msg.sender === 'user'
-                            ? 'bg-slate-900 border border-slate-800 text-slate-200'
-                            : 'bg-teal-950/20 border border-teal-900/40 text-slate-300'
-                        }`}
-                      >
-                        {msg.text}
-                      </div>
-                    )}
+                    <div
+                      className={`text-xs p-3.5 rounded-2xl leading-relaxed max-w-lg ${
+                        msg.sender === 'user'
+                          ? 'bg-slate-900 border border-slate-800 text-slate-200'
+                          : 'bg-teal-950/20 border border-teal-900/40 text-slate-300'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
                   </div>
                 ))
               ) : (
@@ -692,61 +470,6 @@ export default function ChatHistoryDashboard({ onOpenChat }) {
                 Open in Full Chat Room ➔
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── LIGHTBOX IMAGE MODAL ── */}
-      {activeLightboxImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in"
-          onClick={() => setActiveLightboxImage(null)}
-        >
-          <div
-            className="max-w-4xl w-full max-h-[90vh] bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-slate-900 flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-bold text-slate-100 line-clamp-1">
-                  {activeLightboxImage.title || 'Medical Visual Infographic'}
-                </h4>
-                <p className="text-[10px] text-slate-500 font-mono">HealthyBe AI High-Resolution Generator</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={activeLightboxImage.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download="healthybe-visual.jpg"
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-teal-400 text-xs font-bold border border-slate-800 flex items-center gap-1.5"
-                >
-                  <span>⬇️</span>
-                  <span>Save Image</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setActiveLightboxImage(null)}
-                  className="w-8 h-8 rounded-full bg-slate-900 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/60">
-              <img
-                src={activeLightboxImage.url}
-                alt={activeLightboxImage.title || 'Medical visual'}
-                className="max-w-full max-h-[70vh] object-contain rounded-xl shadow-2xl"
-              />
-            </div>
-
-            {activeLightboxImage.caption && (
-              <div className="p-4 bg-slate-950 border-t border-slate-900 text-xs text-slate-300 leading-relaxed">
-                💡 <span className="font-semibold text-teal-300">Clinical Context:</span> {activeLightboxImage.caption}
-              </div>
-            )}
           </div>
         </div>
       )}

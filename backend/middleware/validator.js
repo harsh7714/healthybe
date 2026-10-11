@@ -83,12 +83,15 @@ const validateResetPassword = (req, _res, next) => {
 }
 
 const validateChat = (req, _res, next) => {
-  const { message } = req.body || {}
-  if (!message || typeof message !== 'string' || !message.trim()) {
-    return next(new AppError('Message text is required.', 400))
+  const { message, attachment } = req.body || {}
+  const hasText = message && typeof message === 'string' && message.trim().length > 0
+  const hasAttachment = Boolean(attachment && (attachment.name || attachment.data || attachment.url))
+
+  if (!hasText && !hasAttachment) {
+    return next(new AppError('Please provide a message or attach a medical report/image.', 400))
   }
-  if (message.length > 3000) {
-    return next(new AppError('Message exceeds maximum length of 3000 characters.', 400))
+  if (message && typeof message === 'string' && message.length > 5000) {
+    return next(new AppError('Message exceeds maximum length of 5000 characters.', 400))
   }
   next()
 }

@@ -102,30 +102,106 @@ Rules:
   return JSON.parse(cleaned)
 }
 
-/* ─── Conversational Health Chat ─────────────────────────────── */
-async function chatWithGemini(userMessage, healthContext, language = 'English') {
+/* ─── Conversational Health Chat (Context Window & Multimodal) ─── */
+async function chatWithGemini(userMessage, healthContext, language = 'English', history = [], inlineAttachment = null) {
   const systemPrompt = `You are HealthyBe AI, an expert medical assistant built into the HealthyBe health management platform. You help users understand their health data, medical reports, and provide evidence-based health advice.
 
 PATIENT CONTEXT:
 ${healthContext}
 
 GUIDELINES:
-- Be warm, professional, and empathetic
-- Always reference the patient's actual health data when relevant
-- Provide actionable, specific advice based on the patient's reports and metrics
-- Flag any concerning values and recommend professional consultation when appropriate
-- Keep responses concise but comprehensive (2-4 paragraphs max)
-- Use bullet points for lists of items
-- Never diagnose — always recommend consulting a licensed physician for diagnosis
-- If no health data is available, provide general evidence-based health information
+- Be warm, professional, empathetic, and clear.
+- Always maintain conversational context and refer to previously discussed information in this conversation whenever relevant.
+- Always reference the patient's actual health data, vital signs, and uploaded lab markers when relevant.
+- Provide actionable, specific advice based on the patient's reports and metrics.
+- Flag any concerning values and recommend professional consultation when appropriate.
+- Format responses cleanly with bold text for key terms, bullet points for lists, and brief sections.
+- Never diagnose definitively — always recommend consulting a licensed healthcare provider for official diagnoses and treatment plans.
+- If the user provides a document or photo (from camera or upload), inspect it thoroughly and explain all legible clinical metrics or observations in simple language.
 - LANGUAGE REQUIREMENT: You MUST respond in the language "${language}". All explanations, medical terms explanation, and recommendations must be fully written in "${language}".`
 
-  const result = await generateWithResilience([
-    systemPrompt,
-    `\n\nUser question: ${userMessage}`
-  ])
+  // Format conversational context window (history)
+  const formattedHistory = []
+  if (Array.isArray(history) && history.length > 0) {
+    // Preserve recent conversation turns for tight and relevant context
+    const recent = history.slice(-14)
+    for (const msg of recent) {
+      if (!msg || !msg.text) continue
+      if (msg.isTranslationKey || msg.text === 'chat.greeting') continue
+      const role = (msg.sender === 'user' ? 'user' : 'model')
+      const text = typeof msg.text === 'string' ? msg.text.trim() : ''
+      if (!text) continue
 
-  return result.response.text().trim()
+      // Combine consecutive turns of same role if any
+      if (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === role) {
+        formattedHistory[formattedHistory.length - 1].parts[0].text += `\n\n${text}`
+      } else {
+        formattedHistory.push({
+          role,
+          parts: [{ text }]
+        })
+      }
+    }
+
+    // Gemini API history MUST start with 'user' role
+    while (formattedHistory.length > 0 && formattedHistory[0].role !== 'user') {
+      formattedHistory.shift()
+    }
+  }
+
+  // Construct message parts for current turn
+  const currentParts = []
+  if (inlineAttachment && inlineAttachment.data && inlineAttachment.mimeType) {
+    currentParts.push({
+      inlineData: {
+        data: inlineAttachment.data,
+        mimeType: inlineAttachment.mimeType
+      }
+    })
+  }
+
+  const textContent = userMessage && userMessage.trim()
+    ? userMessage.trim()
+    : (inlineAttachment ? 'Please inspect and analyze this attached medical document or visual.' : 'Hello, can you review my health summary?')
+  currentParts.push({ text: textContent })
+
+  const genAI = getGenAI()
+  const candidateModels = getCandidateModels()
+  let lastError = null
+
+  for (const modelName of candidateModels) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: systemPrompt
+      })
+
+      const chat = model.startChat({
+        history: formattedHistory
+      })
+
+      const result = await chat.sendMessage(currentParts)
+      return result.response.text().trim()
+    } catch (err) {
+      lastError = err
+      const msg = err.message || ''
+      const isTransitory =
+        err.status === 503 ||
+        err.status === 429 ||
+        msg.includes('503') ||
+        msg.includes('high demand') ||
+        msg.includes('temporary') ||
+        msg.includes('Service Unavailable')
+
+      if (isTransitory) {
+        console.warn(`[Gemini Resilience] Model ${modelName} spike. Cascading...`)
+        continue
+      }
+      throw err
+    }
+  }
+
+  throw lastError
 }
 
 module.exports = {

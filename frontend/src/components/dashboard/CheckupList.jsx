@@ -4,8 +4,8 @@ import { Card } from '../ui/Card'
 function CheckupList({ checkups, selectedProfile, t }) {
   return (
     <Card className="p-6 space-y-4 bg-slate-950/40">
-      <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">
-        {t('dashboard.checkupsTitle')}
+      <h3 className="font-bold text-base text-slate-100">
+        🩺 Doctor Visits &amp; Checkups
       </h3>
 
       {checkups.length === 0 ? (

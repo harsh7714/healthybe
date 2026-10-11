@@ -6,11 +6,11 @@ function LabMetrics({ metrics, selectedProfile, t }) {
   return (
     <Card className="p-6 space-y-4 bg-slate-950/40">
       <CardHeader className="pb-2">
-        <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">
-          {t('dashboard.labTitle')} ({metrics.length})
+        <h3 className="font-bold text-base text-slate-100">
+          🧪 Test Results ({metrics.length})
         </h3>
-        <span className="text-[10px] text-slate-500 font-mono">
-          {t('dashboard.labSubtitle')}
+        <span className="text-xs text-slate-400">
+          Results from your uploaded lab reports
         </span>
       </CardHeader>
 
@@ -20,12 +20,12 @@ function LabMetrics({ metrics, selectedProfile, t }) {
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-900 text-slate-500 text-[10px] font-extrabold tracking-widest uppercase">
-                <th className="pb-3 pr-4">{t('common.indicator')}</th>
-                {selectedProfile === 'all' && <th className="pb-3 pr-4">{t('common.patient')}</th>}
-                <th className="pb-3 pr-4">{t('common.value')}</th>
-                <th className="pb-3 pr-4">{t('common.status')}</th>
-                <th className="pb-3">{t('common.source')}</th>
+              <tr className="border-b border-slate-900 text-slate-400 text-xs font-semibold">
+                <th className="pb-3 pr-4 text-left">Test Name</th>
+                {selectedProfile === 'all' && <th className="pb-3 pr-4 text-left">Person</th>}
+                <th className="pb-3 pr-4 text-left">Value</th>
+                <th className="pb-3 pr-4 text-left">Status</th>
+                <th className="pb-3 text-left">Report</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-900/60 text-slate-300">

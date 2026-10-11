@@ -39,6 +39,13 @@ const messageSchema = new mongoose.Schema({
   attachedReportName: {
     type: String,
     default: null
+  },
+  attachment: {
+    type: { type: String, default: null },
+    name: { type: String, default: null },
+    url: { type: String, default: null },
+    source: { type: String, default: null },
+    thumbnail: { type: String, default: null }
   }
 }, { _id: true })
 

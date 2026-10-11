@@ -7,11 +7,11 @@ function VitalsTelemetry({ vitals, selectedProfile, reports = [], t }) {
   return (
     <Card className="p-6 space-y-6 bg-slate-950/40">
       <CardHeader>
-        <h3 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider font-mono">
-          {t('dashboard.vitalsTitle')}
+        <h3 className="font-bold text-base text-slate-100">
+          🫀 Vitals &amp; Readings
         </h3>
-        <span className="text-[10px] text-slate-500 font-mono">
-          {t('dashboard.vitalsSubtitle')}
+        <span className="text-xs text-slate-400">
+          Key numbers from your health reports
         </span>
       </CardHeader>
 
@@ -85,7 +85,7 @@ function VitalsTelemetry({ vitals, selectedProfile, reports = [], t }) {
                   key={idx}
                   className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/30 border border-slate-855 hover:border-slate-800/80 transition-all duration-300 shadow-md group hover:-translate-y-0.5"
                 >
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{name}</p>
+                  <p className="text-xs text-slate-400 font-medium">{name}</p>
                   <div className="flex items-baseline gap-1.5 mt-2.5">
                     <span className="text-2xl font-black text-slate-200 tracking-tight font-mono">{stat.value}</span>
                     <span className="text-[10px] text-slate-500 font-mono font-medium">{stat.unit}</span>
