@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
 import { photoToPdf, photosToMultiPagePdf } from '../utils/photoToPdf'
@@ -11,7 +11,9 @@ function Navbar() {
     setActiveProfileId, 
     activeProfile, 
     uploadReportToS3,
-    isLoggedIn
+    isLoggedIn,
+    preferences,
+    updatePreference
   } = useHealth()
 
   const { t } = useTranslation()
@@ -20,21 +22,8 @@ function Navbar() {
   const cameraInputRef = useRef(null)
   const capturedPagesRef = useRef([])
 
-  const [isLight, setIsLight] = useState(() => {
-    return localStorage.getItem('theme') === 'light'
-  })
+  const isLight = preferences?.theme === 'light'
   const [dropdownOpen, setDropdownOpen] = useState(false)
-
-  // Sync theme
-  useEffect(() => {
-    if (isLight) {
-      document.body.classList.add('light')
-      localStorage.setItem('theme', 'light')
-    } else {
-      document.body.classList.remove('light')
-      localStorage.setItem('theme', 'dark')
-    }
-  }, [isLight])
 
   const handleCameraClick = () => {
     if (!isLoggedIn) {
@@ -111,7 +100,8 @@ function Navbar() {
     { path: "/dashboard", label: t('nav.dashboard') },
     { path: "/chat", label: t('nav.chat') },
     { path: "/reports", label: t('nav.reports') },
-    { path: "/emergency", label: t('nav.emergency') }
+    { path: "/first-aid", label: t('nav.emergency') },
+    { path: "/settings", label: t('nav.settings') }
   ]
 
   return (
@@ -130,7 +120,7 @@ function Navbar() {
 
       {/* 1. DESKTOP FLOATING NAVBAR */}
       {location.pathname !== '/chat' && (
-      <nav className="hidden md:flex fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl bg-slate-950/75 backdrop-blur-lg border border-slate-800/80 px-6 py-3 rounded-full items-center justify-between shadow-2xl transition-all duration-300">
+      <nav className="hidden md:flex fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-6xl bg-slate-950/85 backdrop-blur-lg border border-slate-800/80 px-4 lg:px-6 py-3 rounded-full items-center justify-between shadow-2xl transition-all duration-300">
         
         {/* Brand Logo */}
         <NavLink to="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
@@ -141,16 +131,18 @@ function Navbar() {
         </NavLink>
 
         {/* Navigation Links */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-0.5 lg:gap-1">
           {desktopLinks.map((link) => (
             <NavLink
               key={link.path}
               to={link.path}
               className={({ isActive }) =>
-                `px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 ${
-                  isActive
-                    ? 'text-teal-400 bg-teal-950/30 border border-teal-900/40 shadow-inner'
-                    : 'text-slate-400 hover:text-slate-200'
+                `px-2.5 lg:px-3 py-2 rounded-full text-[11px] lg:text-xs font-semibold tracking-wide transition-all duration-200 ${
+                  isActive && link.path === '/first-aid'
+                    ? 'text-rose-300 bg-rose-950/30 border border-rose-900/40 shadow-inner'
+                    : isActive
+                      ? 'text-teal-400 bg-teal-950/30 border border-teal-900/40 shadow-inner'
+                      : 'text-slate-400 hover:text-slate-200'
                 }`
               }
             >
@@ -163,7 +155,7 @@ function Navbar() {
         <div className="flex items-center gap-4">
           {/* Theme Toggle Button */}
           <button
-            onClick={() => setIsLight(!isLight)}
+            onClick={() => updatePreference('theme', isLight ? 'dark' : 'light')}
             aria-label="Toggle Theme"
             className="p-2.5 rounded-full bg-slate-900 border border-slate-800/80 hover:border-slate-700/80 text-slate-400 hover:text-slate-200 transition-all duration-200 shadow-md"
           >
@@ -275,7 +267,7 @@ function Navbar() {
           </NavLink>
 
           <button
-            onClick={() => setIsLight(!isLight)}
+            onClick={() => updatePreference('theme', isLight ? 'dark' : 'light')}
             aria-label="Toggle Theme"
             className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 active:scale-95 transition-all"
           >
@@ -294,7 +286,7 @@ function Navbar() {
 
       {/* 3. MOBILE BOTTOM NAVIGATION BAR */}
       {location.pathname !== '/chat' && (
-        <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-950/90 backdrop-blur-lg border-t border-slate-900/80 flex items-center justify-between px-6 pb-safe z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] md:hidden">
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-950/95 backdrop-blur-lg border-t border-slate-900/80 flex items-center justify-between px-2 sm:px-5 pb-safe z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] md:hidden">
           
           {/* Tab 2: Dashboard */}
           <NavLink
@@ -311,16 +303,30 @@ function Navbar() {
             <span className="text-[8px] font-bold mt-0.5">{t('nav.dashboard')}</span>
           </NavLink>
 
+          {/* AI Chat */}
+          <NavLink
+            to="/chat"
+            aria-label={t('nav.chat')}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center w-12 h-12 transition-all ${isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'}`
+            }
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5m8-2a9 9 0 01-13.4 7.8L3 21l1.2-4.1A9 9 0 1121 12z" />
+            </svg>
+            <span className="text-[8px] font-bold mt-0.5">{t('nav.chat')}</span>
+          </NavLink>
+
           {/* Tab 3: Emergency */}
           <NavLink
-            to="/emergency"
+            to="/first-aid"
             className={({ isActive }) =>
               `flex flex-col items-center justify-center w-12 h-12 transition-all ${
-                isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-400'
+                isActive ? 'text-rose-400' : 'text-slate-500 hover:text-slate-300'
               }`
             }
           >
-            <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <span className="text-[8px] font-bold mt-0.5">{t('nav.emergency')}</span>

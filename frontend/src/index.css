@@ -661,3 +661,76 @@ body.light .chat-user-avatar {
   border-color: #cbd5e1 !important;
   color: #0d9488 !important;
 }
+
+/* Shared application theme tokens. Page shells and cards use the same palette. */
+:root {
+  --theme-page: #0b0f19;
+  --theme-surface: #101923;
+  --theme-raised: #17222e;
+  --theme-border: rgba(148, 163, 184, 0.16);
+  --theme-text: #e2e8f0;
+  --theme-muted: #94a3b8;
+}
+
+body.light {
+  --theme-page: #f3f6f8;
+  --theme-surface: #ffffff;
+  --theme-raised: #f8fafc;
+  --theme-border: #dce4ea;
+  --theme-text: #15212b;
+  --theme-muted: #64748b;
+}
+
+.app-shell,
+.app-page,
+.app-chat {
+  background-color: var(--theme-page) !important;
+  color: var(--theme-text);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.app-panel,
+.app-chat aside {
+  background-color: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+}
+
+.app-chat main {
+  background-color: var(--theme-page) !important;
+  color: var(--theme-text);
+}
+
+body.light .app-chat [class*="bg-[#101923]"],
+body.light .app-page [class*="bg-[#101923]"] {
+  background-color: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+}
+
+body.light .app-chat [class*="bg-[#17222e]"] {
+  background-color: var(--theme-raised) !important;
+  border-color: var(--theme-border) !important;
+}
+
+body.light .app-chat [class*="hover:bg-[#22313f]"]:hover {
+  background-color: #e8eef3 !important;
+}
+
+body.light .app-chat [class*="bg-white/[.04]"],
+body.light .app-chat [class*="bg-white/[.06]"],
+body.light .app-chat [class*="bg-white/[.08]"] {
+  background-color: rgba(15, 23, 42, 0.045) !important;
+}
+
+body.light .app-chat [class*="border-white/"],
+body.light .app-page [class*="border-white/"] {
+  border-color: var(--theme-border) !important;
+}
+
+body.light .app-chat button.bg-white {
+  background-color: #15212b !important;
+  color: #ffffff !important;
+}
+
+.app-panel {
+  border-color: var(--theme-border) !important;
+}

@@ -1,314 +1,114 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useHealth } from '../context/HealthContext'
-import { useTranslation } from '../utils/translationService'
-import { simplifyMetric } from '../utils/healthSimplifier'
 import ExportClinicalPdfModal from '../components/ExportClinicalPdfModal'
 
-/* ── helpers ─────────────────────────────────────── */
-function statusVariant(status = '') {
-  const s = status.toLowerCase()
-  if (s.includes('high') || s.includes('elevated') || s.includes('decrease') || s.includes('insufficiency') || s.includes('critical')) return 'bad'
-  if (s.includes('borderline') || s.includes('pre-diabetic') || s.includes('recommended')) return 'warn'
-  return 'ok'
+const tone = (status = '') => /high|low|critical|abnormal|elevat|decreas|insufficien/i.test(status) ? 'rose' : /borderline|watch|recommend/i.test(status) ? 'amber' : 'emerald'
+const panel = 'app-panel rounded-[1.6rem] border border-white/[.08] bg-[#101923]/90 shadow-[0_18px_55px_-35px_rgba(0,0,0,.85)]'
+
+function Icon({ name, className = 'h-5 w-5' }) {
+  const paths = {
+    spark: <><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/><path d="m19 14 .9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14Z"/></>,
+    report: <><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v6h5M10 13h6M10 17h6"/></>,
+    arrow: <><path d="M5 12h14M13 6l6 6-6 6"/></>,
+    heart: <path d="M20.8 8.8c0 5.2-8.8 10-8.8 10s-8.8-4.8-8.8-10a4.8 4.8 0 0 1 8.8-2.4 4.8 4.8 0 0 1 8.8 2.4Z"/>,
+    leaf: <><path d="M20 4c-8 0-14 2.5-14 9a5 5 0 0 0 5 5c6.5 0 9-6 9-14Z"/><path d="M4 21c2-5 6-8 11-11"/></>,
+    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    download: <><path d="M12 3v12m-5-5 5 5 5-5M5 19h14"/></>,
+    plus: <><path d="M12 5v14M5 12h14"/></>,
+    chevron: <path d="m9 18 6-6-6-6"/>,
+  }
+  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
 
-const pillStyle = {
-  bad:  'bg-red-950/60 border border-red-500/30 text-red-300',
-  warn: 'bg-amber-950/60 border border-amber-500/30 text-amber-300',
-  ok:   'bg-emerald-950/40 border border-emerald-700/30 text-emerald-300',
-}
-
-const dotStyle = {
-  bad:  'bg-red-400',
-  warn: 'bg-amber-400',
-  ok:   'bg-emerald-400',
-}
-
-/* Build a flat summary from a report's analysis object */
-function buildSummary(analysis = {}, memberName, lang) {
-  const findings   = analysis.checkup?.findings || null
-  const checkType  = analysis.checkup?.type     || null
-
-  // Vitals pills (max 4)
-  const vitalPills = Object.entries(analysis.vitals || {}).slice(0, 4).map(([name, stat]) => ({
-    label: name,
-    value: `${stat.value} ${stat.unit}`.trim(),
-    variant: statusVariant(stat.status),
-  }))
-
-  // Metric pills — flagged ones first (max 4)
-  const allMetrics = (analysis.metrics || []).map(m => ({
-    label: m.name,
-    value: `${m.value} ${m.unit}`.trim(),
-    variant: statusVariant(m.status),
-    simplified: simplifyMetric(m.name, m.status, m.value, m.unit, lang),
-  }))
-  const flagged  = allMetrics.filter(m => m.variant !== 'ok')
-  const normal   = allMetrics.filter(m => m.variant === 'ok')
-  const pills    = [...flagged, ...normal].slice(0, 4)
-
-  // One suggestion — prefer first diet tip, else first med
-  const suggestion =
-    (analysis.diet   && analysis.diet[0]) ||
-    (analysis.medications && analysis.medications[0] && `Take ${analysis.medications[0].name} — ${analysis.medications[0].freq}`) ||
-    null
-
-  // Meds list (simplified)
-  const meds = (analysis.medications || []).map(m => `${m.name} ${m.dose}`)
-
-  return { findings, checkType, vitalPills, metricPills: pills, suggestion, meds, hasAlerts: flagged.length > 0 }
-}
-
-/* ── Dashboard ───────────────────────────────────── */
 function Dashboard() {
-  const {
-    family, activeProfileId, activeProfile,
-    isLoggedIn, familyLoading, reports = [], getReportAnalysis,
-    getDerivedHealthData
-  } = useHealth()
-  const { lang } = useTranslation()
+  const { family = [], activeProfileId, activeProfile, isLoggedIn, familyLoading, reports = [], getReportAnalysis, getDerivedHealthData } = useHealth()
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
-  const [expandedCard, setExpandedCard]           = useState(null)
-
   if (!isLoggedIn) return null
+  if (familyLoading) return <div className="app-page min-h-screen grid place-items-center bg-[#0b1118] text-slate-300">Loading your health overview…</div>
 
-  if (familyLoading) {
-    return (
-      <div className="bg-[#0B0F19] min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="w-9 h-9 rounded-full border-2 border-teal-500/30 border-t-teal-500 animate-spin mx-auto" />
-          <p className="text-sm text-slate-400">Loading your health data…</p>
-        </div>
-      </div>
-    )
-  }
-
-  const selectedProfile   = activeProfileId
-  const activeProfileName = activeProfile?.name || ''
-
-  /* ── Build cards from reports ── */
-  const activeReports = selectedProfile === 'all'
-    ? reports
-    : reports.filter(r => r.profileId === selectedProfile)
-
-  /* ── Fallback: no uploaded reports — use derived data as one card ── */
-  let fallbackCard = null
-  if (activeReports.length === 0 && selectedProfile !== 'all') {
-    const derived = getDerivedHealthData(selectedProfile)
-    if (Object.keys(derived.vitals).length > 0 || derived.metrics.length > 0) {
-      const fakeAnalysis = {
-        vitals: derived.vitals,
-        metrics: derived.metrics,
-        medications: derived.medications,
-        diet: derived.diet.map(d => d.text || d),
-        checkup: derived.checkups[0] || null,
-      }
-      fallbackCard = { id: 'derived', name: 'Health Overview', date: 'Latest', profileId: selectedProfile, analysis: fakeAnalysis }
-    }
-  }
-
-  const cards = (activeReports.length > 0 ? activeReports : (fallbackCard ? [fallbackCard] : []))
-
-  /* ── Collect all derived data for export modal ── */
-  let exportVitals = {}, exportMetrics = [], exportMeds = [], exportCheckups = [], exportDiet = []
-  if (selectedProfile !== 'all' && activeProfile?.healthData) {
-    exportVitals   = activeProfile.healthData.vitals      || {}
-    exportMetrics  = activeProfile.healthData.metrics     || []
-    exportMeds     = activeProfile.healthData.medications || []
-    exportCheckups = activeProfile.healthData.checkups    || []
-    exportDiet     = activeProfile.healthData.diet        || []
-  }
+  const selectedProfile = activeProfileId
+  const activeReports = (selectedProfile === 'all' ? reports : reports.filter(r => r.profileId === selectedProfile))
+    .map(report => ({ ...report, analysis: report.analysis || getReportAnalysis?.(report.name) || {} }))
+    .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0))
+  const derived = selectedProfile === 'all' ? null : getDerivedHealthData(selectedProfile)
+  const latest = activeReports[0]
+  const allMetrics = latest?.analysis?.metrics || derived?.metrics || []
+  const vitals = latest?.analysis?.vitals || derived?.vitals || {}
+  const diet = latest?.analysis?.diet || derived?.diet?.map(item => item.text || item) || []
+  const medications = latest?.analysis?.medications || derived?.medications || []
+  const checkup = latest?.analysis?.checkup || derived?.checkups?.[0]
+  const insight = checkup?.findings || (diet[0]?.text || diet[0]) || 'Your health records are ready for a closer look. Add a report to receive tailored insights and practical next steps.'
+  const profileName = selectedProfile === 'all' ? 'Family' : activeProfile?.name || 'Your'
+  const activeReportCount = activeReports.length
+  const reportForExport = selectedProfile === 'all' ? {} : activeProfile?.healthData || {}
+  const metricCards = allMetrics.slice(0, 4)
+  const vitalEntries = Object.entries(vitals).slice(0, 3)
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-28 md:pb-16 px-4 sm:px-6 lg:px-10">
-      <div className="max-w-3xl mx-auto space-y-7">
-
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <main className="app-page min-h-screen bg-[#0B0F19] text-slate-100 px-4 pb-28 pt-24 sm:px-6 md:pb-16 md:pt-32">
+      <div className="mx-auto max-w-[1240px] space-y-7">
+        <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <h1 className="text-2xl font-bold text-white">
-              {selectedProfile === 'all' ? '🏠 Family Health' : `👤 ${activeProfileName}'s Health`}
-            </h1>
-            <p className="text-sm text-slate-400 mt-0.5">
-              {cards.length === 0
-                ? 'Upload a health report to get started.'
-                : `${cards.length} report${cards.length !== 1 ? 's' : ''} · tap a card to see details`}
-            </p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[.24em] text-teal-300/80">Your personal health, in focus</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-[2.6rem]">Good to see you, {profileName}<span className="text-teal-300">.</span></h1>
+            <p className="mt-2 text-sm text-slate-400">A clear view of your reports, daily guidance and health signals.</p>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setIsExportModalOpen(true)}
-            className="self-start sm:self-auto inline-flex items-center gap-2 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 text-sm font-medium px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Download PDF
-          </button>
-        </div>
-
-        {/* ── Empty state ── */}
-        {cards.length === 0 && (
-          <div className="py-20 text-center space-y-3">
-            <div className="text-4xl">📄</div>
-            <p className="text-slate-300 font-medium">No reports yet</p>
-            <p className="text-sm text-slate-500">Upload a lab report or medical document from the Reports page.</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setIsExportModalOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/[.08]"><Icon name="download" className="h-4 w-4"/> Export summary</button>
+            <Link to="/reports?scan=true" className="inline-flex items-center gap-2 rounded-xl bg-teal-300 px-4 py-2.5 text-sm font-semibold text-[#10211f] transition hover:bg-teal-200"><Icon name="plus" className="h-4 w-4"/> Add report</Link>
           </div>
-        )}
+        </header>
 
-        {/* ── Report Cards ── */}
-        {cards.map((report, rIdx) => {
-          const analysis = report.analysis || (getReportAnalysis && getReportAnalysis(report.name)) || {}
-          const member   = family.find(f => f.id === report.profileId)
-          const sum      = buildSummary(analysis, member?.name, lang)
-          const isOpen   = expandedCard === report.id
-
-          return (
-            <div
-              key={report.id || rIdx}
-              className={`rounded-2xl border transition-all duration-200 overflow-hidden
-                ${sum.hasAlerts
-                  ? 'bg-slate-900/60 border-red-500/20'
-                  : 'bg-slate-900/40 border-slate-800/60'
-                }`}
-            >
-              {/* Card header — always visible */}
-              <button
-                className="w-full text-left p-5 flex items-start gap-4 focus:outline-none"
-                onClick={() => setExpandedCard(isOpen ? null : report.id)}
-              >
-                {/* Icon */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg
-                  ${sum.hasAlerts ? 'bg-red-950/60' : 'bg-teal-950/60'}`}>
-                  {sum.hasAlerts ? '⚠️' : '✅'}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  {/* Top row: name + date */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm text-white truncate">
-                      {sum.checkType || report.name}
-                    </span>
-                    {selectedProfile === 'all' && member && (
-                      <span className="text-xs text-teal-400 font-medium shrink-0">{member.name}</span>
-                    )}
-                    <span className="text-xs text-slate-500 ml-auto shrink-0">{report.date}</span>
-                  </div>
-
-                  {/* One-line summary */}
-                  {sum.findings && (
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">{sum.findings}</p>
-                  )}
-
-                  {/* Reading pills */}
-                  {(sum.vitalPills.length > 0 || sum.metricPills.length > 0) && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {[...sum.vitalPills, ...sum.metricPills].slice(0, 4).map((p, pIdx) => (
-                        <span
-                          key={pIdx}
-                          className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ${pillStyle[p.variant]}`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotStyle[p.variant]}`} />
-                          {p.label}: <strong>{p.value}</strong>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Chevron */}
-                <svg
-                  className={`w-4 h-4 text-slate-500 shrink-0 mt-1 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Expanded detail */}
-              {isOpen && (
-                <div className="px-5 pb-5 space-y-4 border-t border-slate-800/50 pt-4">
-
-                  {/* All readings */}
-                  {[...sum.vitalPills, ...sum.metricPills].length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-slate-400 mb-2">📊 All Readings</p>
-                      <div className="flex flex-wrap gap-2">
-                        {[...sum.vitalPills, ...sum.metricPills].map((p, pIdx) => (
-                          <span
-                            key={pIdx}
-                            className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ${pillStyle[p.variant]}`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotStyle[p.variant]}`} />
-                            {p.label}: <strong>{p.value}</strong>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Medications */}
-                  {sum.meds.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-slate-400 mb-2">💊 Medicines</p>
-                      <div className="flex flex-wrap gap-2">
-                        {sum.meds.map((med, mIdx) => (
-                          <span key={mIdx} className="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1 rounded-full">
-                            {med}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Suggestion */}
-                  {sum.suggestion && (
-                    <div className="flex gap-3 p-3 bg-teal-950/30 border border-teal-800/30 rounded-xl">
-                      <span className="text-base shrink-0">💡</span>
-                      <div>
-                        <p className="text-[11px] font-semibold text-teal-400 mb-0.5">Suggestion</p>
-                        <p className="text-xs text-teal-200 leading-relaxed">{sum.suggestion}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* All diet tips */}
-                  {(analysis.diet || []).length > 1 && (
-                    <div>
-                      <p className="text-xs font-semibold text-slate-400 mb-2">🥗 Diet Tips</p>
-                      <ul className="space-y-1.5">
-                        {(analysis.diet || []).map((d, dIdx) => (
-                          <li key={dIdx} className="flex gap-2 text-xs text-slate-300 leading-relaxed">
-                            <span className="text-teal-500 mt-0.5 shrink-0">•</span>
-                            {d.text || d}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
+        <section className="grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
+          <article className={`${panel} relative isolate overflow-hidden p-6 sm:p-8`}>
+            <div className="pointer-events-none absolute -right-16 -top-24 -z-10 h-72 w-72 rounded-full bg-teal-400/10 blur-3xl"/>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.15em] text-teal-300"><span className="grid h-7 w-7 place-items-center rounded-lg bg-teal-300/10"><Icon name="spark" className="h-4 w-4"/></span> Health intelligence</div>
+            <h2 className="mt-7 max-w-xl text-2xl font-medium leading-snug text-white sm:text-[2rem]">A little clarity can make a big difference.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">{insight}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link to="/chat" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-teal-50">Ask your AI health guide <Icon name="arrow" className="h-4 w-4"/></Link>
+              {latest && <span className="text-xs text-slate-500">Based on {latest.name}{latest.date ? ` · ${latest.date}` : ''}</span>}
             </div>
-          )
-        })}
+            <p className="mt-5 border-t border-white/[.07] pt-4 text-[11px] text-slate-500">AI guidance is for information and does not replace advice from your clinician.</p>
+          </article>
 
+          <article className={`${panel} flex flex-col justify-between p-6`}>
+            <div className="flex items-start justify-between"><div><p className="text-sm text-slate-400">Your health library</p><p className="mt-2 text-4xl font-semibold tracking-tight text-white">{activeReportCount.toString().padStart(2, '0')}</p><p className="mt-1 text-xs text-slate-500">{activeReportCount === 1 ? 'report analyzed' : 'reports analyzed'}</p></div><div className="grid h-11 w-11 place-items-center rounded-2xl bg-sky-300/10 text-sky-200"><Icon name="report"/></div></div>
+            <div className="mt-7 border-t border-white/[.07] pt-4">
+              <div className="flex items-center justify-between text-xs"><span className="text-slate-400">Latest update</span><span className="text-slate-200">{latest?.date || 'No reports yet'}</span></div>
+              <Link to="/reports" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-teal-300 hover:text-teal-200">Open reports <Icon name="arrow" className="h-4 w-4"/></Link>
+            </div>
+          </article>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-end justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[.2em] text-slate-500">At a glance</p><h2 className="mt-1 text-lg font-semibold text-white">Recent health signals</h2></div><Link to="/reports" className="text-xs text-teal-300 hover:text-teal-200">View all reports →</Link></div>
+          {metricCards.length || vitalEntries.length ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {metricCards.length ? metricCards.map((metric, i) => {
+              const color = tone(metric.status)
+              return <article key={`${metric.name}-${i}`} className={`${panel} p-5`}><div className="flex items-center justify-between"><span className="text-xs text-slate-400">{metric.name}</span><span className={`h-2 w-2 rounded-full ${color === 'rose' ? 'bg-rose-400' : color === 'amber' ? 'bg-amber-300' : 'bg-emerald-300'}`}/></div><p className="mt-4 text-2xl font-semibold text-white">{metric.value}<span className="ml-1 text-sm font-normal text-slate-400">{metric.unit}</span></p><p className="mt-2 text-xs text-slate-500">{metric.status || 'From latest report'}</p></article>
+            }) : vitalEntries.map(([name, reading]) => <article key={name} className={`${panel} p-5`}><div className="flex items-center justify-between"><span className="text-xs text-slate-400">{name}</span><Icon name="heart" className="h-4 w-4 text-rose-300"/></div><p className="mt-4 text-2xl font-semibold text-white">{reading.value}<span className="ml-1 text-sm font-normal text-slate-400">{reading.unit}</span></p><p className="mt-2 text-xs text-slate-500">{reading.status || 'Latest reading'}</p></article>)}
+          </div> : <div className={`${panel} flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between`}><div><p className="font-medium text-white">Your health signals will appear here</p><p className="mt-1 text-sm text-slate-400">Add a lab or checkup report to see analyzed readings.</p></div><Link to="/reports?scan=true" className="text-sm font-semibold text-teal-300">Add your first report →</Link></div>}
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[1fr_1fr]">
+          <article className={`${panel} p-6 sm:p-7`}>
+            <div className="flex items-start justify-between"><div><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.13em] text-emerald-200"><Icon name="leaf" className="h-4 w-4"/> Food & nutrition</div><h2 className="mt-2 text-lg font-semibold text-white">Small steps, tailored to you</h2></div><span className="rounded-full border border-emerald-300/15 bg-emerald-300/[.07] px-2.5 py-1 text-[10px] font-medium text-emerald-200">PERSONALIZED</span></div>
+            {diet.length ? <ul className="mt-5 space-y-3">{diet.slice(0, 4).map((item, i) => <li key={i} className="flex gap-3 rounded-xl bg-white/[.03] p-3.5 text-sm leading-6 text-slate-300"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300"/>{item?.text || item}</li>)}</ul> : <div className="mt-5 rounded-xl border border-dashed border-white/10 p-5"><p className="text-sm text-slate-300">Your tailored food guidance appears after a report is analyzed.</p><Link to="/reports" className="mt-2 inline-block text-xs font-medium text-teal-300">Explore your reports →</Link></div>}
+          </article>
+          <article className={`${panel} p-6 sm:p-7`}>
+            <div className="flex items-start justify-between"><div><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.13em] text-sky-200"><Icon name="clock" className="h-4 w-4"/> Your records</div><h2 className="mt-2 text-lg font-semibold text-white">Recent reports</h2></div><Link to="/reports" className="text-xs font-medium text-teal-300">See all →</Link></div>
+            {activeReports.length ? <div className="mt-4 divide-y divide-white/[.07]">{activeReports.slice(0, 3).map((report, i) => <Link key={report.id || i} to="/reports" className="flex items-center gap-3 py-3.5 first:pt-1 last:pb-0"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sky-300/[.08] text-sky-200"><Icon name="report" className="h-4 w-4"/></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-slate-200">{report.analysis?.checkup?.type || report.name}</span><span className="mt-1 block text-xs text-slate-500">{report.date || 'Health document'}{selectedProfile === 'all' ? ` · ${family.find(f => f.id === report.profileId)?.name || ''}` : ''}</span></span><Icon name="chevron" className="h-4 w-4 shrink-0 text-slate-500"/></Link>)}</div> : <div className="mt-5 rounded-xl border border-dashed border-white/10 p-5"><p className="text-sm text-slate-300">Your reports will be organized here.</p><Link to="/reports?scan=true" className="mt-2 inline-block text-xs font-medium text-teal-300">Upload or scan a report →</Link></div>}
+          </article>
+        </section>
+
+        {medications.length > 0 && <section className={`${panel} p-6`}><div className="flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[.18em] text-slate-500">Care plan</p><h2 className="mt-1 font-semibold text-white">Medications in your records</h2></div><span className="text-xs text-slate-500">{medications.length} listed</span></div><div className="mt-4 flex flex-wrap gap-2">{medications.slice(0, 6).map((med, i) => <span key={`${med.name}-${i}`} className="rounded-full border border-white/[.08] bg-white/[.03] px-3 py-2 text-xs text-slate-300">{med.name}{med.dose ? ` · ${med.dose}` : ''}</span>)}</div></section>}
+
+        <p className="text-center text-[11px] text-slate-600">Your health information is personal. Review AI-generated insights with a qualified healthcare professional.</p>
       </div>
-
-      {/* Export PDF Modal */}
-      <ExportClinicalPdfModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        profile={selectedProfile === 'all'
-          ? { name: 'Family Health Summary', relation: 'All Profiles', email: activeProfile?.email }
-          : activeProfile}
-        vitals={exportVitals}
-        metrics={exportMetrics}
-        medications={exportMeds}
-        checkups={exportCheckups}
-        diet={exportDiet}
-      />
-    </div>
+      <ExportClinicalPdfModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} profile={selectedProfile === 'all' ? { name: 'Family Health Summary', relation: 'All Profiles', email: activeProfile?.email } : activeProfile} vitals={reportForExport.vitals || vitals} metrics={reportForExport.metrics || allMetrics} medications={reportForExport.medications || medications} checkups={reportForExport.checkups || derived?.checkups || []} diet={reportForExport.diet || diet}/>
+    </main>
   )
 }
 

@@ -83,11 +83,13 @@ function Settings() {
   ]
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 md:pb-20 px-4 sm:px-12 lg:px-24">
-      <div className="max-w-4xl mx-auto space-y-8">
-        
-
-
+    <div className="app-page bg-[#0B0F19] text-slate-100 min-h-screen pt-24 md:pt-32 pb-24 md:pb-20 px-4 sm:px-6 lg:px-10">
+      <div className="max-w-[1240px] mx-auto space-y-7">
+        <header className="mb-2">
+          <p className="text-[11px] font-bold uppercase tracking-[.22em] text-teal-300/80">Your account</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Settings<span className="text-teal-300">.</span></h1>
+          <p className="mt-2 text-sm text-slate-400">Manage your profile, family members, and preferences in one place.</p>
+        </header>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           
           {/* Left Column: Account Profile & Family */}
@@ -279,6 +281,33 @@ function Settings() {
 
           {/* Right Column: Preferences */}
           <div className="md:col-span-5 space-y-6">
+
+            <Card className="p-5 space-y-4 bg-slate-950/40">
+              <div>
+                <h3 className="font-bold text-sm text-slate-200">Appearance</h3>
+                <p className="mt-1 text-xs text-slate-500">Choose one theme for every page.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-900 p-1">
+                {[
+                  { value: 'light', label: 'Light' },
+                  { value: 'dark', label: 'Dark' }
+                ].map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => updatePreference('theme', option.value)}
+                    aria-pressed={(preferences.theme || 'dark') === option.value}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                      (preferences.theme || 'dark') === option.value
+                        ? 'bg-teal-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </Card>
             
             {/* Logged in as */}
             {userEmail && (

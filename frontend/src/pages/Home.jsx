@@ -74,8 +74,8 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
     ),
-    title: 'Emergency Board',
-    desc: 'Access critical helplines instantly — national emergency (112), government ambulance (108), blood bank (1097), poison control, and first-aid guides. No login required to view this page.',
+    title: 'First Aid',
+    desc: 'Find clear, step-by-step first-aid guidance and call India’s emergency number (112). No login required.',
     color: 'text-rose-400',
     bg: 'bg-rose-950/50',
     border: 'border-rose-900/50',
@@ -85,7 +85,7 @@ const features = [
 
 export default function Home() {
   return (
-    <div className="bg-[#080C14] text-slate-100 min-h-screen">
+    <div className="app-page bg-[#0B0F19] text-slate-100 min-h-screen">
 
       {/* ── HERO ──────────────────────────────────────────────────── */}
       <section className="relative pt-20 md:pt-32 pb-24 px-4 sm:px-12 lg:px-24 overflow-hidden">
@@ -115,7 +115,7 @@ export default function Home() {
             </h1>
 
             <p className="text-slate-400 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Upload medical reports, track vitals and lab results, chat with an AI health assistant, and access emergency helplines — all in one place, for your whole family.
+              Upload medical reports, track vitals and lab results, chat with an AI health assistant, and find first-aid guidance — all in one place, for your whole family.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
@@ -129,13 +129,13 @@ export default function Home() {
                 </svg>
               </Link>
               <Link
-                to="/emergency"
+                to="/first-aid"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-slate-900/70 hover:bg-slate-800/70 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-slate-100 font-semibold text-sm rounded-2xl transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                Emergency Board
+                First Aid
               </Link>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import RootLayout from './layouts/RootLayout.jsx'
-import { Route } from 'react-router-dom'
+import { Navigate, Route } from 'react-router-dom'
 import { createBrowserRouter, RouterProvider, createRoutesFromElements } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -17,7 +17,8 @@ const router = createBrowserRouter(createRoutesFromElements(
     <Route path='/chat' element={<Chat />} />
     <Route path='/reports' element={<Reports />} />
     <Route path='/settings' element={<Settings />} />
-    <Route path='/emergency' element={<Emergency />} />
+    <Route path='/first-aid' element={<Emergency />} />
+    <Route path='/emergency' element={<Navigate to='/first-aid' replace />} />
   </Route>
 ))
 

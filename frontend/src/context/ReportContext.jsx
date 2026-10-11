@@ -318,6 +318,33 @@ export function ReportProvider({ children }) {
   const [uploadError, setUploadError] = useState(null)
   const [globalStagedFile, setGlobalStagedFile] = useState(null)
 
+  const mapApiReport = (r) => ({
+    id:           r.id || r._id,
+    name:         r.name,
+    dbKey:        r.s3Key,
+    profileId:    r.profileId,
+    date:         r.date,
+    createdAt:    r.createdAt,
+    size:         r.size,
+    type:         r.type,
+    status:       r.status || 'COMPLETED',
+    errorMessage: r.errorMessage || null,
+    pages:        r.s3Url ? [r.s3Url] : [],
+    s3Url:        r.s3Url,
+    s3Key:        r.s3Key,
+    analysis:     r.analysis || null,
+  })
+
+  const refreshReports = async (apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001') => {
+    if (!userEmail) return
+    const res = await fetch(`${apiBase}/api/reports`, {
+      headers: { 'x-user-email': userEmail }
+    })
+    if (!res.ok) throw new Error('Could not refresh reports')
+    const data = await res.json()
+    setReports(data.map(mapApiReport))
+  }
+
   // Standard upload progress modal state
   const [uploadModalState, setUploadModalState] = useState({
     isOpen: false,
@@ -354,23 +381,7 @@ export function ReportProvider({ children }) {
       headers: { 'x-user-email': userEmail }
     })
       .then(r => r.ok ? r.json() : Promise.reject('Server error'))
-      .then(data => {
-        setReports(data.map(r => ({
-          id:           r.id || r._id,
-          name:         r.name,
-          dbKey:        r.s3Key,
-          profileId:    r.profileId,
-          date:         r.date,
-          size:         r.size,
-          type:         r.type,
-          status:       r.status || 'COMPLETED',
-          errorMessage: r.errorMessage || null,
-          pages:        r.s3Url ? [r.s3Url] : [],
-          s3Url:        r.s3Url,
-          s3Key:        r.s3Key,
-          analysis:     r.analysis,
-        })))
-      })
+      .then(data => setReports(data.map(mapApiReport)))
       .catch(err => console.warn('Could not load reports from backend:', err))
       .finally(() => setReportsLoading(false))
   }, [userEmail, isLoggedIn])
@@ -395,7 +406,7 @@ export function ReportProvider({ children }) {
               setReports(prev => prev.map(item => item.id === pr.id ? {
                 ...item,
                 status: statusData.status,
-                analysis: statusData.analysis,
+              analysis: statusData.analysis || item.analysis || null,
                 errorMessage: statusData.errorMessage
               } : item))
             }
@@ -405,11 +416,12 @@ export function ReportProvider({ children }) {
 
       if (anyFinished) {
         try {
-          const pRes = await fetch(`${apiBase}/api/profiles`, { headers: { 'x-user-email': userEmail } })
-          if (pRes.ok) {
-            const pData = await pRes.json()
-            setFamily(pData)
-          }
+          await Promise.all([
+            refreshReports(apiBase),
+            fetch(`${apiBase}/api/profiles`, { headers: { 'x-user-email': userEmail } })
+              .then(pRes => pRes.ok ? pRes.json() : Promise.reject(new Error('Could not refresh profiles')))
+              .then(setFamily)
+          ])
         } catch (_) {}
       }
     }, 2500)
@@ -482,10 +494,10 @@ export function ReportProvider({ children }) {
 
         if (statusData.status === 'COMPLETED') {
           clearInterval(poller)
-          setReports(prev => prev.map(r => r.id === reportId ? {
+          setReports(prev => prev.map(r => String(r.id) === String(reportId) ? {
             ...r,
             status: 'COMPLETED',
-            analysis: statusData.analysis,
+            analysis: statusData.analysis || r.analysis || null,
             errorMessage: null
           } : r))
 
@@ -498,11 +510,12 @@ export function ReportProvider({ children }) {
 
           // Refresh family dashboard metrics
           try {
-            const pRes = await fetch(`${apiBase}/api/profiles`, { headers: { 'x-user-email': userEmail } })
-            if (pRes.ok) {
-              const pData = await pRes.json()
-              setFamily(pData)
-            }
+            await Promise.all([
+              refreshReports(apiBase),
+              fetch(`${apiBase}/api/profiles`, { headers: { 'x-user-email': userEmail } })
+                .then(pRes => pRes.ok ? pRes.json() : Promise.reject(new Error('Could not refresh profiles')))
+                .then(setFamily)
+            ])
           } catch (_) {}
 
           // Auto-close modal after 2.5 seconds if completed

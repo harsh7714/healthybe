@@ -1,12 +1,25 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 
 const PreferencesContext = createContext()
 
 export function PreferencesProvider({ children }) {
   const [preferences, setPreferences] = useState(() => {
     const saved = localStorage.getItem('user_preferences')
-    return saved ? JSON.parse(saved) : { language: 'English' }
+    const parsed = saved ? JSON.parse(saved) : {}
+    return {
+      language: 'English',
+      ...parsed,
+      theme: localStorage.getItem('theme') || parsed.theme || 'dark'
+    }
   })
+
+  useEffect(() => {
+    const isLight = preferences.theme === 'light'
+    document.documentElement.dataset.theme = isLight ? 'light' : 'dark'
+    document.documentElement.style.colorScheme = isLight ? 'light' : 'dark'
+    document.body.classList.toggle('light', isLight)
+    localStorage.setItem('theme', isLight ? 'light' : 'dark')
+  }, [preferences.theme])
 
   const updatePreference = (key, value) => {
     setPreferences(prev => {

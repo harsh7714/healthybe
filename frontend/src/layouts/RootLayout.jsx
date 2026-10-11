@@ -464,7 +464,7 @@ function AuthGuardInline() {
 
         {/* Feature pills */}
         <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-          {['Health Vault', 'AI Analysis', 'Family Profiles', 'Emergency Board'].map(f => (
+          {['Health Vault', 'AI Analysis', 'Family Profiles', 'First Aid'].map(f => (
             <span key={f} className="px-3 py-1 rounded-full bg-slate-900/80 border border-slate-800/60 text-[10px] text-slate-500 font-medium">
               {f}
             </span>
@@ -498,7 +498,7 @@ function RootLayout() {
   }, [isChatRoute, isLoggedIn])
 
   return (
-    <div className={isChatRoute && isLoggedIn ? 'h-[100dvh] overflow-hidden flex flex-col bg-[#0B0F19] no-scrollbar' : 'bg-[#0B0F19] text-slate-100 min-h-screen flex flex-col'}>
+    <div className={isChatRoute && isLoggedIn ? 'app-shell h-[100dvh] overflow-hidden flex flex-col bg-[#0B0F19] no-scrollbar' : 'app-shell bg-[#0B0F19] text-slate-100 min-h-screen flex flex-col'}>
       <Navbar />
       <div className={isChatRoute && isLoggedIn ? 'flex-1 overflow-hidden flex flex-col no-scrollbar' : 'flex-1 flex flex-col'}>
         {isProtectedRoute && !isLoggedIn ? (

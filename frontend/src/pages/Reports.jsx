@@ -112,8 +112,14 @@ function Reports() {
   const profileName = family.find(f => f.id === activeProfileId)?.name || 'Unknown'
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 min-h-screen pt-20 md:pt-32 pb-24 px-4 sm:px-12 lg:px-24">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="app-page bg-[#0B0F19] text-slate-100 min-h-screen pt-24 md:pt-32 pb-24 px-4 sm:px-6 lg:px-10">
+      <div className="max-w-[1240px] mx-auto space-y-7">
+
+        <header>
+          <p className="text-[11px] font-bold uppercase tracking-[.22em] text-teal-300/80">Your health library</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Reports<span className="text-teal-300">.</span></h1>
+          <p className="mt-2 text-sm text-slate-400">Upload or scan a document to keep your records organized and get an AI summary.</p>
+        </header>
 
 
         {/* ── Success Toast ─────────────────────────────────────── */}

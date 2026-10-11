@@ -66,13 +66,8 @@ function Chat() {
   // ── Option 3: Direct Upload Input Ref ──
   const deviceFileInputRef = useRef(null)
 
-  // ── Voice Chat States ──
-  const [isListening, setIsListening] = useState(false)
-  const [speechTranscript, setSpeechTranscript] = useState('')
-  const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true)
-  const [speakingMessageId, setSpeakingMessageId] = useState(null)
-  const [autoVoiceReply, setAutoVoiceReply] = useState(false)
-  const recognitionRef = useRef(null)
+  // ── Header Menu State ──
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false)
 
   // ── Image Zoom Lightbox ──
   const [zoomImage, setZoomImage] = useState(null)
@@ -93,14 +88,6 @@ function Chat() {
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 140)}px`
     }
   }, [inputVal])
-
-  // Check speech recognition support
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      setSpeechRecognitionSupported(false)
-    }
-  }, [])
 
   // ── Fetch Previous Chat Sessions ──
   const fetchSessionsList = async () => {
@@ -224,7 +211,6 @@ function Chat() {
     const queryText = (textToSend || '').trim()
     if (!queryText && !attachmentToSend) return
 
-    stopSpeaking()
     setError('')
 
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -320,18 +306,15 @@ function Chat() {
 
       setMessages(prev => [...prev, newAiMsg])
 
-      // Auto-read aloud if voice reply mode is toggled on
-      if (autoVoiceReply) {
-        speakResponseText(aiReplyText, messages.length + 1)
-      }
     } catch (err) {
       console.error('Chat error:', err)
-      setError(`Consultation error: ${err.message}`)
+      const friendlyError = 'I couldn’t reply just now. Please try again.'
+      setError(friendlyError)
       setMessages(prev => [
         ...prev,
         {
           sender: 'ai',
-          text: `⚠️ I encountered an error communicating with the health AI: ${err.message}. Please check your connection.`,
+          text: friendlyError,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ])
@@ -364,7 +347,6 @@ function Chat() {
   }
 
   const startNewChat = () => {
-    stopSpeaking()
     setCurrentSessionId(null)
     setSessionTitle('')
     setSearchParams({})
@@ -383,7 +365,6 @@ function Chat() {
   }
 
   const selectPastSession = (sessionId) => {
-    stopSpeaking()
     setCurrentSessionId(sessionId)
     setSearchParams({ sessionId })
     setMobileDrawerOpen(false)
@@ -531,99 +512,6 @@ function Chat() {
     reader.readAsDataURL(file)
   }
 
-  // ── VOICE CHAT (SPEECH TO TEXT & TEXT TO SPEECH) ──
-  const toggleVoiceInput = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser. Please try Chrome, Edge, or Safari.')
-      return
-    }
-
-    if (isListening) {
-      recognitionRef.current?.stop()
-      setIsListening(false)
-      return
-    }
-
-    try {
-      const recognition = new SpeechRecognition()
-      recognition.continuous = true
-      recognition.interimResults = true
-      recognition.lang = preferences?.language === 'Hindi' ? 'hi-IN' : 'en-US'
-
-      recognition.onstart = () => {
-        setIsListening(true)
-        setSpeechTranscript('')
-      }
-
-      recognition.onresult = (event) => {
-        let currentTranscript = ''
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcriptChunk = event.results[i][0].transcript
-          currentTranscript += transcriptChunk
-        }
-        setSpeechTranscript(currentTranscript)
-        setInputVal(prev => {
-          const base = prev.trim()
-          return base ? `${base} ${currentTranscript}` : currentTranscript
-        })
-      }
-
-      recognition.onerror = (event) => {
-        console.warn('Speech recognition error:', event.error)
-        setIsListening(false)
-      }
-
-      recognition.onend = () => {
-        setIsListening(false)
-      }
-
-      recognitionRef.current = recognition
-      recognition.start()
-    } catch (err) {
-      console.error('Error starting speech recognition:', err)
-      setIsListening(false)
-    }
-  }
-
-  const speakResponseText = (text, index) => {
-    if (!('speechSynthesis' in window)) return
-
-    if (speakingMessageId === index) {
-      stopSpeaking()
-      return
-    }
-
-    stopSpeaking()
-    const cleanText = text
-      .replace(/[#*`_~]/g, '')
-      .replace(/\[File Attached:[^\]]+\]/g, '')
-      .replace(/https?:\/\/\S+/g, '')
-      .trim()
-
-    const utterance = new SpeechSynthesisUtterance(cleanText)
-    utterance.rate = 1.0
-    utterance.pitch = 1.0
-
-    // Match browser voices
-    const voices = window.speechSynthesis.getVoices()
-    const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')))
-    if (preferredVoice) utterance.voice = preferredVoice
-
-    utterance.onend = () => setSpeakingMessageId(null)
-    utterance.onerror = () => setSpeakingMessageId(null)
-
-    setSpeakingMessageId(index)
-    window.speechSynthesis.speak(utterance)
-  }
-
-  const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-    }
-    setSpeakingMessageId(null)
-  }
-
   const copyToClipboard = (text, index) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopiedIndex(index)
@@ -748,7 +636,7 @@ function Chat() {
   })
 
   return (
-    <div className="bg-[#0B0F19] text-slate-100 h-[100dvh] flex flex-row overflow-hidden relative font-sans">
+    <div className="app-chat bg-[#0B0F19] text-slate-100 h-[100dvh] flex flex-row overflow-hidden relative font-sans">
 
       {/* Hidden File Inputs */}
       <input
@@ -781,7 +669,7 @@ function Chat() {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 md:z-10 flex flex-col bg-slate-950/95 border-r border-slate-900 backdrop-blur-2xl transition-all duration-300 ease-in-out ${
+        className={`fixed md:static inset-y-0 left-0 z-50 md:z-10 flex flex-col bg-[#101923] border-r border-white/[.07] backdrop-blur-2xl transition-all duration-300 ease-in-out ${
           // Mobile open/close
           mobileDrawerOpen ? 'translate-x-0 w-72 sm:w-80 shadow-2xl' : '-translate-x-full md:translate-x-0'
         } ${
@@ -790,18 +678,13 @@ function Chat() {
         }`}
       >
         {/* Sidebar Header: Brand & New Chat */}
-        <div className="p-4 border-b border-slate-900/80 space-y-3">
+        <div className="p-4 border-b border-white/[.07] space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full border border-teal-500/30 bg-teal-950/50 flex items-center justify-center p-1.5 shadow-sm">
-                <img src="/favicon.ico" alt="HealthyBe AI" className="w-full h-full object-contain" />
+              <div className="w-7 h-7 rounded-full bg-white/[.06] flex items-center justify-center overflow-hidden">
+                <img src="/favicon.ico" alt="HealthyBe AI" className="h-full w-full rounded-full object-cover" />
               </div>
-              <div>
-                <h2 className="text-sm font-extrabold text-white tracking-tight flex items-center gap-1.5">
-                  <span>HealthyBe AI</span>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">3.6</span>
-                </h2>
-              </div>
+              <h2 className="text-sm font-semibold text-white tracking-tight">HealthyBe</h2>
             </div>
 
             {/* Mobile Close Button */}
@@ -818,13 +701,10 @@ function Chat() {
           <button
             type="button"
             onClick={startNewChat}
-            className="w-full py-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-teal-500 via-teal-400 to-cyan-500 hover:brightness-110 active:scale-[0.98] text-black font-extrabold text-xs transition-all flex items-center justify-between shadow-md shadow-teal-950/40"
+            className="w-full py-2.5 px-3 rounded-xl bg-[#17222e] hover:bg-[#22313f] active:scale-[0.99] text-slate-100 font-medium text-xs transition-colors flex items-center gap-2"
           >
-            <div className="flex items-center gap-2 font-black">
-              <span className="text-base leading-none">+</span>
-              <span>New Consultation</span>
-            </div>
-            <span className="text-[10px] font-mono bg-black/15 px-1.5 py-0.5 rounded-md">Ctrl+K</span>
+            <span className="text-base leading-none">+</span>
+            <span>New chat</span>
           </button>
 
           {/* Search Box */}
@@ -834,9 +714,9 @@ function Chat() {
               value={sessionSearch}
               onChange={(e) => setSessionSearch(e.target.value)}
               placeholder="Search conversations..."
-              className="w-full bg-slate-900/60 border border-slate-800/80 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-teal-500/40 transition-colors"
+              className="w-full bg-[#222] border border-white/[.08] rounded-xl px-3 py-2 pl-8 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-white/20 focus:ring-2 focus:ring-white/[.05] transition-colors"
             />
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs">🔍</span>
+            <svg className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4 4"/></svg>
             {sessionSearch && (
               <button
                 type="button"
@@ -851,9 +731,9 @@ function Chat() {
 
         {/* Sessions History List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1.5 no-scrollbar">
-          <div className="px-2 py-1 flex items-center justify-between text-[10px] font-mono uppercase font-bold text-slate-500 tracking-wider">
-            <span>Recent Chats</span>
-            <span>{filteredSessions.length}</span>
+          <div className="px-2 py-2 flex items-center justify-between text-[11px] font-medium text-slate-500">
+            <span>Chats</span>
+            <span className="text-[10px]">{filteredSessions.length}</span>
           </div>
 
           {sessionsLoading ? (
@@ -878,15 +758,15 @@ function Chat() {
                   onClick={() => selectPastSession(session.id || session._id)}
                   className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-2 group ${
                     isActive
-                      ? 'bg-teal-950/40 border-teal-500/40 text-teal-200 shadow-sm'
-                      : 'bg-slate-900/30 border-slate-900/80 hover:bg-slate-900 hover:border-slate-800 text-slate-300'
+                      ? 'bg-white/[.08] border-white/[.08] text-white'
+                      : 'bg-transparent border-transparent hover:bg-white/[.05] hover:border-white/[.06] text-slate-300'
                   }`}
                 >
                   <div className="min-w-0 flex-1 space-y-0.5">
-                    <h4 className="text-xs font-bold truncate group-hover:text-teal-300 transition-colors">
+                    <h4 className="text-xs font-medium truncate group-hover:text-white transition-colors">
                       {session.title || 'Health Consultation'}
                     </h4>
-                    <div className="flex items-center gap-1.5 text-[9px] text-slate-500 font-mono">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                       <span>{session.profileName || 'Self'}</span>
                       <span>•</span>
                       <span>{formattedDate}</span>
@@ -896,10 +776,10 @@ function Chat() {
                   <button
                     type="button"
                     onClick={(e) => deletePastSession(e, session.id || session._id)}
-                    className="w-6 h-6 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-rose-950/50 text-slate-500 hover:text-rose-400 flex items-center justify-center text-xs transition-all"
+                    className="w-7 h-7 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-rose-950/50 text-slate-500 hover:text-rose-400 flex items-center justify-center text-xs transition-all"
                     title="Delete consultation"
                   >
-                    🗑️
+                    ×
                   </button>
                 </div>
               )
@@ -908,8 +788,8 @@ function Chat() {
         </div>
 
         {/* Sidebar Footer: Patient Profile Selector */}
-        <div className="p-3 border-t border-slate-900/80 bg-slate-950/60">
-          <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+        <div className="p-3 border-t border-white/[.07] bg-[#101923]">
+          <div className="flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-white/[.04] transition-colors">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-extrabold text-teal-400 overflow-hidden shrink-0 shadow-sm">
                 {activeProfile?.profileImageUrl ? (
@@ -920,14 +800,14 @@ function Chat() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-200 truncate">{activeProfile?.name || 'Self'}</p>
-                <p className="text-[10px] text-teal-400 font-mono truncate">{activeProfile?.relation || 'Patient Profile'}</p>
+                <p className="text-[10px] text-slate-500 truncate">{activeProfile?.relation || 'Patient profile'}</p>
               </div>
             </div>
 
             <select
               value={activeProfileId || 'self'}
               onChange={(e) => setActiveProfileId(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-[10px] text-slate-300 rounded-xl px-2 py-1 focus:outline-none focus:border-teal-500/50 cursor-pointer"
+              className="max-w-24 bg-transparent text-[10px] text-slate-400 rounded-lg px-1 py-1 focus:outline-none focus:ring-1 focus:ring-white/20 cursor-pointer"
               title="Switch Patient Profile"
             >
               {family.map(f => (
@@ -944,7 +824,7 @@ function Chat() {
       <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0 relative bg-[#0B0F19]">
 
         {/* Top Header Bar */}
-        <header className="h-14 shrink-0 border-b border-slate-900/80 px-3 sm:px-6 flex items-center justify-between bg-slate-950/40 backdrop-blur-md z-20">
+        <header className="h-[68px] shrink-0 border-b border-white/[.07] px-3 sm:px-6 flex items-center justify-between bg-[#0B0F19]/95 backdrop-blur-xl z-20">
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Sidebar Toggle for Desktop */}
             <button
@@ -972,91 +852,73 @@ function Chat() {
 
             {/* Active Model / Context Indicator */}
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-slate-100 flex items-center gap-1.5">
-                <span>HealthyBe AI</span>
-                <span className="text-teal-400 text-xs">✨</span>
-              </span>
-
-              {/* Context Window Badge */}
-              <div
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-300"
-                title="Continuous conversation memory preserves multi-turn context"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Context Window Active</span>
-              </div>
+              <span className="text-sm font-medium text-slate-200">HealthyBe</span>
             </div>
           </div>
 
-          {/* Right Controls */}
-          <div className="flex items-center gap-2">
-            {/* Auto-read voice reply toggle */}
-            <button
-              type="button"
-              onClick={() => setAutoVoiceReply(!autoVoiceReply)}
-              className={`px-2.5 py-1 rounded-xl text-[10px] font-bold font-mono transition-all border flex items-center gap-1.5 ${
-                autoVoiceReply
-                  ? 'bg-teal-950/60 border-teal-500/50 text-teal-300 shadow-sm'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-              title={autoVoiceReply ? 'Auto voice playback active' : 'Turn on automatic voice playback'}
-            >
-              <span>{autoVoiceReply ? '🔊 Voice On' : '🔈 Voice Off'}</span>
-            </button>
-
-            {/* Quick New Chat Button */}
-            <button
-              type="button"
-              onClick={startNewChat}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
-            >
-              <span>+</span>
-              <span className="hidden sm:inline">New Chat</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hover:bg-white/[.06] hover:text-white"
+            title="Home"
+            aria-label="Home"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+          </button>
         </header>
 
         {/* Message Stream */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-6 no-scrollbar flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 sm:py-7 space-y-6 no-scrollbar flex flex-col min-h-0">
           <div className="max-w-3xl lg:max-w-4xl mx-auto w-full flex-1 flex flex-col justify-start">
 
             {messages.length <= 1 ? (
               /* ── WELCOME HERO STATE (GEMINI / CHATGPT STYLE) ── */
-              <div className="my-auto py-8 sm:py-12 space-y-8 flex flex-col items-center justify-center w-full animate-fade-in text-center">
+              <div className="my-auto py-8 sm:py-12 flex flex-col items-center justify-center w-full animate-fade-in text-center">
                 <div className="space-y-3 max-w-xl">
-                  <div className="w-14 h-14 rounded-3xl bg-gradient-to-tr from-teal-500/20 via-cyan-500/10 to-transparent border border-teal-500/30 flex items-center justify-center mx-auto shadow-xl shadow-teal-950/30">
-                    <span className="text-2xl">✨</span>
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-teal-500/20 via-cyan-500/10 to-transparent border border-teal-500/30 flex items-center justify-center mx-auto shadow-xl shadow-teal-950/30 overflow-hidden">
+                    <img src="/favicon.ico" alt="" className="h-full w-full rounded-full object-cover" />
                   </div>
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-teal-300 via-cyan-200 to-white bg-clip-text text-transparent tracking-tight">
-                    How can I assist your health, {firstName}?
+                  <p className="mb-3 text-[10px] font-bold uppercase tracking-[.26em] text-teal-200/80">Your personal health assistant</p>
+                  <h1 className="text-[2rem] sm:text-5xl font-semibold leading-tight tracking-[-.04em] text-white">
+                How can I help, {firstName}?
                   </h1>
                   <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-lg mx-auto">
-                    Consult clinical reports, analyze prescriptions, monitor lab metrics, and receive contextual medical guidance with continuous conversational memory.
+                    Hi {firstName}. Ask about a report, lab result, or health concern. I’ll help make the information easier to understand.
                   </p>
                 </div>
 
                 {/* 4 Starter Prompts Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl pt-2">
+                <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2">
                   {starterPrompts.map((s, idx) => (
                     <Card
                       key={idx}
                       onClick={() => !isTyping && sendMessage(s.prompt, null)}
-                      className="p-4 text-left bg-slate-950/60 border border-slate-900 hover:border-teal-500/40 hover:bg-slate-900/60 cursor-pointer flex items-start gap-3 transition-all duration-200 group"
+                      onKeyDown={(event) => {
+                        if (!isTyping && (event.key === 'Enter' || event.key === ' ')) {
+                          event.preventDefault()
+                          sendMessage(s.prompt, null)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={isTyping ? -1 : 0}
+                      aria-label={`Ask: ${s.prompt}`}
+                      className="group flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[.08] bg-[#17222e] p-4 text-left transition-all duration-200 hover:border-white/20 hover:bg-[#22313f] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                     >
-                      <span className="text-xl p-2 rounded-xl bg-slate-900 border border-slate-800 shrink-0 group-hover:scale-110 transition-transform">
-                        {s.icon}
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[.08] bg-[#101923] text-xs font-semibold tracking-wide text-slate-400 transition-colors group-hover:text-white">
+                        {String(idx + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-slate-200 group-hover:text-teal-300 transition-colors">
+                        <h4 className="text-sm font-semibold text-slate-100 transition-colors group-hover:text-teal-100">
                           {s.title}
                         </h4>
-                        <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5 leading-relaxed">
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-400">
                           {s.prompt}
                         </p>
                       </div>
                     </Card>
                   ))}
                 </div>
+                <p className="mt-5 flex items-center gap-2 text-[11px] text-slate-500"><span className="h-1.5 w-1.5 rounded-full bg-teal-300/80"/> Your saved health reports can add context to your questions.</p>
               </div>
             ) : (
               /* ── MESSAGE LIST ── */
@@ -1071,13 +933,14 @@ function Chat() {
                     >
                       {/* AI Avatar */}
                       {!isUser && (
-                        <div className="w-8 h-8 rounded-full border border-teal-500/30 bg-slate-950 flex items-center justify-center p-1.5 shadow-md shrink-0 mt-0.5">
-                          <img src="/favicon.ico" alt="HealthyBe AI" className="w-full h-full object-contain" />
+                      <div className="w-9 h-9 rounded-full border border-teal-200/15 bg-teal-200/[.07] flex items-center justify-center overflow-hidden shadow-md shrink-0 mt-0.5">
+                          <img src="/favicon.ico" alt="HealthyBe AI" className="w-full h-full rounded-full object-cover" />
                         </div>
                       )}
 
                       {/* Message Content Container */}
-                      <div className={`space-y-2 max-w-2xl ${isUser ? 'items-end' : 'items-start flex-1'}`}>
+                      <div className={`flex w-full flex-col gap-2 ${isUser ? 'items-end' : 'items-start'}`}>
+                        {!isUser && <span className="pl-1 text-[10px] font-medium tracking-wide text-slate-400">HealthyBe Health Guide</span>}
                         {/* Attached Item Card Preview inside Chat */}
                         {msg.attachment && (
                           <div className={`p-2.5 rounded-2xl border flex items-center gap-3 w-fit ${
@@ -1094,7 +957,7 @@ function Chat() {
                               />
                             ) : (
                               <div className="w-10 h-10 rounded-xl bg-slate-850 flex items-center justify-center text-lg">
-                                {msg.attachment.type === 'image' ? '📸' : '📄'}
+                                {msg.attachment.type === 'image' ? 'Image' : 'File'}
                               </div>
                             )}
                             <div className="min-w-0 pr-2">
@@ -1102,7 +965,7 @@ function Chat() {
                                 {msg.attachment.name}
                               </p>
                               <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-950 text-teal-400 border border-slate-800 inline-block mt-0.5">
-                                {msg.attachment.source === 'camera' ? '📸 Camera Snapshot' : msg.attachment.source === 'vault' ? '📑 Vault Report' : '📎 Direct Upload'}
+                                {msg.attachment.source === 'camera' ? 'Camera image' : msg.attachment.source === 'vault' ? 'Health report' : 'Uploaded file'}
                               </span>
                             </div>
                           </div>
@@ -1112,8 +975,8 @@ function Chat() {
                         <div
                           className={`text-sm leading-relaxed ${
                             isUser
-                              ? 'bg-gradient-to-tr from-slate-900 to-slate-950 border border-slate-800 px-4 py-3 rounded-2xl text-slate-100 shadow-sm ml-auto'
-                              : 'text-slate-200 w-full pt-1'
+                            ? 'max-w-[88%] rounded-3xl rounded-tr-md border border-white/[.08] bg-[#303030] px-4 py-3 text-slate-100'
+                              : 'w-full px-1 py-2 text-slate-200 sm:px-2'
                           }`}
                         >
                           {isUser ? (
@@ -1125,7 +988,7 @@ function Chat() {
                           )}
 
                           {/* Footer details & Action Bar for AI response */}
-                          <div className={`flex items-center gap-3 mt-2 pt-1 text-[9px] text-slate-500 font-mono ${isUser ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`flex items-center gap-3 mt-3 pt-2 text-[10px] text-slate-500 ${isUser ? 'justify-end border-t border-white/[.06]' : 'justify-start border-t border-white/[.06]'}`}>
                             <span>{msg.time}</span>
 
                             {!isUser && (
@@ -1137,20 +1000,9 @@ function Chat() {
                                   className="hover:text-slate-300 transition-colors flex items-center gap-1"
                                   title="Copy response"
                                 >
-                                  <span>{copiedIndex === idx ? '✓ Copied' : '📋 Copy'}</span>
+                                  <span>{copiedIndex === idx ? 'Copied' : 'Copy'}</span>
                                 </button>
 
-                                {/* Speak / Listen Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => speakResponseText(msg.text, idx)}
-                                  className={`transition-colors flex items-center gap-1 font-bold ${
-                                    speakingMessageId === idx ? 'text-teal-400' : 'hover:text-teal-300'
-                                  }`}
-                                  title={speakingMessageId === idx ? 'Stop Speaking' : 'Read aloud'}
-                                >
-                                  <span>{speakingMessageId === idx ? '⏹️ Stop' : '🔊 Listen'}</span>
-                                </button>
                               </div>
                             )}
                           </div>
@@ -1174,8 +1026,8 @@ function Chat() {
                 {/* AI Thinking Indicator */}
                 {isTyping && (
                   <div className="flex gap-3 sm:gap-4 items-start w-full animate-fade-in">
-                    <div className="w-8 h-8 rounded-full border border-teal-500/30 bg-slate-950 flex items-center justify-center p-1.5 shadow-md shrink-0 mt-0.5">
-                      <img src="/favicon.ico" alt="HealthyBe AI" className="w-full h-full object-contain" />
+                    <div className="w-8 h-8 rounded-full border border-teal-500/30 bg-slate-950 flex items-center justify-center overflow-hidden shadow-md shrink-0 mt-0.5">
+                      <img src="/favicon.ico" alt="HealthyBe AI" className="w-full h-full rounded-full object-cover" />
                     </div>
                     <div className="py-2 flex items-center gap-2 text-slate-500 font-semibold text-xs">
                       <span>Analyzing clinical data...</span>
@@ -1197,7 +1049,7 @@ function Chat() {
         {/* ═════════════════════════════════════════════════════════════
             3. BOTTOM INPUT BAR (GEMINI / CHATGPT CAPSULE WITH 3 OPTIONS)
            ═════════════════════════════════════════════════════════════ */}
-        <div className="w-full max-w-3xl lg:max-w-4xl mx-auto px-3 sm:px-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shrink-0 relative z-20">
+        <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shrink-0 relative z-20">
 
           {/* Error Banner */}
           {error && (
@@ -1207,34 +1059,9 @@ function Chat() {
             </div>
           )}
 
-          {/* Active Voice Listening Banner */}
-          {isListening && (
-            <div className="mb-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-950/60 via-slate-900 to-teal-950/60 border border-red-500/40 flex items-center justify-between gap-3 animate-fade-in shadow-lg">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-3 h-3 rounded-full bg-red-500 animate-ping shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-white flex items-center gap-2">
-                    <span>Listening to your voice...</span>
-                    <span className="text-[10px] font-mono text-red-300">REC</span>
-                  </p>
-                  <p className="text-[11px] text-slate-300 truncate italic">
-                    "{speechTranscript || 'Speak naturally into your microphone...'}"
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={toggleVoiceInput}
-                className="px-3 py-1 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shrink-0"
-              >
-                Done
-              </button>
-            </div>
-          )}
-
           {/* Attached Item Preview Chip Tray */}
           {activeAttachment && (
-            <div className="mb-2 flex items-center gap-2 bg-slate-950/90 border border-teal-500/40 px-3 py-1.5 rounded-2xl shadow-xl w-fit max-w-full animate-fade-in">
+            <div className="mb-2 flex items-center gap-2 bg-[#17222e] border border-white/[.08] px-3 py-1.5 rounded-xl w-fit max-w-full animate-fade-in">
               {activeAttachment.url ? (
                 <img
                   src={activeAttachment.url}
@@ -1243,15 +1070,15 @@ function Chat() {
                 />
               ) : (
                 <span className="text-base shrink-0">
-                  {activeAttachment.type === 'vault' ? '📑' : '📄'}
+                  {activeAttachment.type === 'vault' ? 'Report' : 'File'}
                 </span>
               )}
               <div className="min-w-0 pr-1">
-                <p className="text-xs font-bold text-teal-300 truncate max-w-[220px]">
+                <p className="text-xs font-medium text-slate-200 truncate max-w-[220px]">
                   {activeAttachment.name}
                 </p>
-                <span className="text-[9px] text-slate-400 font-mono">
-                  {activeAttachment.source === 'camera' ? '📸 Camera Snapshot' : activeAttachment.source === 'vault' ? '📑 Vault Report' : '📎 Device Upload'}
+                <span className="text-[10px] text-slate-500">
+                  {activeAttachment.source === 'camera' ? 'Camera image' : activeAttachment.source === 'vault' ? 'Health report' : 'Uploaded file'}
                 </span>
               </div>
               <button
@@ -1266,106 +1093,35 @@ function Chat() {
           )}
 
           {/* Main Input Container Capsule */}
-          <form
-            onSubmit={handleFormSubmit}
-            className="relative bg-slate-950/80 border border-slate-800/90 focus-within:border-teal-500/50 focus-within:ring-2 focus-within:ring-teal-950/40 rounded-3xl p-2 transition-all duration-300 shadow-2xl backdrop-blur-xl"
-          >
-            {/* Textarea Input */}
-            <div className="px-2 pt-1">
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                value={inputVal}
-                onChange={(e) => setInputVal(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Message HealthyBe AI... (attach photo, vault report, or use voice chat)"
-                disabled={isTyping}
-                className="w-full bg-transparent text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none resize-none leading-relaxed max-h-36 no-scrollbar"
-              />
-            </div>
-
-            {/* Bottom Actions Row: 3 Options + Voice Chat + Send */}
-            <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-900/60 mt-1">
-              {/* The 3 User-Requested Options: Camera, Recent Uploads, Direct Upload */}
-              <div className="flex items-center gap-1 sm:gap-1.5">
-
-                {/* Option 1: CAMERA (📷) */}
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 hover:text-teal-300 border border-slate-800/80 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
-                  title="Take photo of prescription or document with camera"
-                >
-                  <span className="text-sm">📷</span>
-                  <span className="hidden xs:inline text-[11px]">Camera</span>
+          <form onSubmit={handleFormSubmit} className="relative rounded-[1.65rem] border border-white/[.08] bg-[#17222e] px-3 pt-3 pb-2 shadow-[0_12px_35px_-24px_rgba(0,0,0,.9)] transition-colors focus-within:border-white/20">
+            {attachmentMenuOpen && (
+              <div className="absolute bottom-full left-2 z-30 mb-2 w-56 rounded-xl border border-white/[.08] bg-[#17222e] p-1.5 shadow-2xl">
+                <button type="button" onClick={() => { setAttachmentMenuOpen(false); startCamera() }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/[.06] hover:text-white">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Take a photo
                 </button>
-
-                {/* Option 2: RECENT UPLOADS (📑) */}
-                <button
-                  type="button"
-                  onClick={() => setRecentUploadsModalOpen(true)}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 hover:text-cyan-300 border border-slate-800/80 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
-                  title="Attach recent clinical report from your health vault"
-                >
-                  <span className="text-sm">📑</span>
-                  <span className="hidden xs:inline text-[11px]">Recent Uploads</span>
-                  {activeReports.length > 0 && (
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-300">
-                      {activeReports.length}
-                    </span>
-                  )}
+                <button type="button" onClick={() => { setAttachmentMenuOpen(false); setRecentUploadsModalOpen(true) }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/[.06] hover:text-white">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v6h5M10 13h6M10 17h6"/></svg>Attach a report{activeReports.length > 0 ? ` (${activeReports.length})` : ''}
                 </button>
-
-                {/* Option 3: DIRECT DEVICE UPLOAD (📎) */}
-                <button
-                  type="button"
-                  onClick={() => deviceFileInputRef.current?.click()}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 hover:text-blue-300 border border-slate-800/80 text-slate-300 text-xs font-bold transition-all flex items-center gap-1.5"
-                  title="Upload image or PDF document directly from your device"
-                >
-                  <span className="text-sm">📎</span>
-                  <span className="hidden sm:inline text-[11px]">Upload File</span>
+                <button type="button" onClick={() => { setAttachmentMenuOpen(false); deviceFileInputRef.current?.click() }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/[.06] hover:text-white">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m8 12.5 6.7-6.7a3 3 0 0 1 4.2 4.2l-8.5 8.5a5 5 0 0 1-7.1-7.1l8.1-8.1"/></svg>Upload a file
                 </button>
               </div>
-
-              {/* Right Side: Voice Chat + Send Button */}
-              <div className="flex items-center gap-1.5">
-                {/* Voice Chat Microphone Button */}
-                <button
-                  type="button"
-                  onClick={toggleVoiceInput}
-                  disabled={isTyping}
-                  className={`w-9 h-9 rounded-full transition-all flex items-center justify-center text-sm shadow-md ${
-                    isListening
-                      ? 'bg-red-600 text-white animate-pulse ring-4 ring-red-900/50'
-                      : 'bg-slate-900 hover:bg-slate-850 text-slate-300 hover:text-teal-300 border border-slate-800'
-                  }`}
-                  title={isListening ? 'Stop listening' : 'Start voice chat'}
-                >
-                  🎙️
-                </button>
-
-                {/* Send Button */}
-                <button
-                  type="submit"
-                  disabled={(!inputVal.trim() && !activeAttachment) || isTyping}
-                  className="w-9 h-9 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-black font-black text-sm flex items-center justify-center transition-all shadow-md shadow-teal-950/40 shrink-0"
-                  title="Send message"
-                >
-                  {isTyping ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-black/30 border-t-black animate-spin" />
-                  ) : (
-                    <span>➔</span>
-                  )}
+            )}
+            <div className="flex items-end gap-2">
+              <button type="button" onClick={() => setAttachmentMenuOpen(!attachmentMenuOpen)} aria-label="Add an attachment" aria-expanded={attachmentMenuOpen} className="mb-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-400 transition hover:bg-white/[.08] hover:text-white">
+                <svg className={`h-5 w-5 transition-transform ${attachmentMenuOpen ? 'rotate-45' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <textarea ref={textareaRef} rows={1} value={inputVal} onChange={(e) => setInputVal(e.target.value)} onKeyDown={handleKeyDown} placeholder="Message HealthyBe…" disabled={isTyping} className="max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:outline-none no-scrollbar" />
+              <div className="mb-0.5 flex shrink-0 items-center gap-1.5">
+                <button type="submit" disabled={(!inputVal.trim() && !activeAttachment) || isTyping} aria-label="Send message" className="grid h-9 w-9 place-items-center rounded-full bg-white text-[#0B0F19] transition hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-30">
+                  {isTyping ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" /> : <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>}
                 </button>
               </div>
             </div>
           </form>
 
           {/* Footer Disclaimer */}
-          <p className="text-[10px] text-slate-600 text-center mt-2 leading-relaxed">
-            HealthyBe AI analyzes patient health data with multi-turn memory. Always consult licensed medical providers for official diagnosis.
-          </p>
+          <p className="mt-2 text-center text-[10px] text-slate-600">AI can make mistakes. Verify important health information with your clinician.</p>
         </div>
       </main>
 
@@ -1378,7 +1134,7 @@ function Chat() {
             {/* Header */}
             <div className="p-4 border-b border-slate-900 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-base">📷</span>
+                <svg className="h-4 w-4 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>
                 <h3 className="text-sm font-bold text-white">Live Camera Capture</h3>
               </div>
               <button
@@ -1431,7 +1187,7 @@ function Chat() {
                 onClick={capturePhoto}
                 className="px-6 py-2.5 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:brightness-110 active:scale-95 text-black font-black text-xs transition-all shadow-lg flex items-center gap-2"
               >
-                <span>📸</span>
+                <span>Capture</span>
                 <span>Capture Snapshot</span>
               </button>
 
@@ -1458,7 +1214,7 @@ function Chat() {
             <div className="p-4 border-b border-slate-900 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <span>📑</span>
+                  <span>File</span>
                   <span>Select from Recent Health Uploads</span>
                 </h3>
                 <p className="text-[10px] text-slate-500 font-mono mt-0.5">
@@ -1489,7 +1245,7 @@ function Chat() {
             <div className="flex-1 overflow-y-auto p-4 space-y-2.5 no-scrollbar">
               {filteredVaultReports.length === 0 ? (
                 <div className="py-12 text-center space-y-2">
-                  <span className="text-2xl">📂</span>
+                <svg className="mx-auto h-8 w-8 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/><path d="M3 7V5h7l2 2"/></svg>
                   <p className="text-xs text-slate-500">No medical reports found in vault.</p>
                 </div>
               ) : (
@@ -1505,7 +1261,7 @@ function Chat() {
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-xl p-2 rounded-xl bg-slate-900 border border-slate-800 shrink-0">
-                          📄
+                          File
                         </span>
                         <div className="min-w-0">
                           <h4 className="text-xs font-bold text-slate-200 group-hover:text-teal-300 transition-colors truncate">
