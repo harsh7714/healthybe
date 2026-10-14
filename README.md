@@ -2,16 +2,38 @@
 
 **Version**: `v1.1.0`
 
-A premium, modern family health record and dashboard application. It allows users to manage multiple family profiles, upload medical reports, convert camera-captured images automatically to PDF format, store records securely as Base64 data URIs in MongoDB, query reports via an AI health consultation chat (powered by Google Gemini 1.5 Flash), and access emergency helplines.
+HealthyBe keeps each family member's report library separated under one account. The React/Vite frontend connects to an Express + MongoDB API; reports are stored in AWS S3 when configured, and are only sent to Gemini when a user explicitly asks a question about them in AI chat. Uploading a file does not trigger analysis or extraction.
 
 ---
 
 ## 🛠️ Project Structure
 
-The project is structured into two separate workspaces:
+The frontend is organized by feature, with shared UI and API code kept separate. The backend follows Express layers.
 
-- **[`frontend/`](./frontend)**: A React + Vite web application styled with premium custom HSL/CSS variables, containing user authentication guards, dashboard visualization, profile vault management, and camera capture controls.
-- **[`backend/`](./backend)**: An Express server integrated with MongoDB (Mongoose), AWS S3 (`@aws-sdk/client-s3`), and Google Gemini AI.
+```text
+frontend/src/
+├── app/                    # App state, routes and account guard
+├── features/
+│   ├── account/            # Authentication, profiles and settings
+│   ├── chat/               # Health assistant
+│   ├── home/               # Home screen
+│   └── reports/            # Upload and report management
+├── services/api/           # HTTP client plus auth/profile/report/chat APIs
+├── shared/                 # Reusable components, layout and navigation data
+├── index.css               # Global styles and responsive theme
+└── main.jsx                # Frontend entry point
+
+backend/
+├── config/                 # Database setup
+├── middleware/             # Authentication, rate limits and errors
+├── models/                 # MongoDB models
+├── routes/                 # API endpoint groups
+├── services/               # Gemini, email and file storage
+└── utils/                  # Shared helpers
+```
+
+- **[`frontend/`](./frontend)**: React + Vite client.
+- **[`backend/`](./backend)**: Express API with MongoDB (Mongoose), private report storage, and Gemini chat.
 
 ---
 
@@ -22,17 +44,7 @@ Make sure you have MongoDB running locally, or prepare a MongoDB Atlas connectio
 `mongodb://localhost:27017/healthybe`
 
 ### 2. Configure Environment Variables
-Copy the example environment template in the backend:
-```bash
-cp backend/.env.example backend/.env
-```
-Open **`backend/.env`** and populate the variables:
-- `MONGODB_URI`: Connection string (local or Atlas)
-- `AWS_ACCESS_KEY_ID`: Your AWS credential
-- `AWS_SECRET_ACCESS_KEY`: Your AWS credential
-- `AWS_REGION`: e.g. `ap-south-1`
-- `AWS_BUCKET_NAME`: Target S3 bucket name
-- `GEMINI_API_KEY`: Get a free key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+Configure `backend/.env` with `MONGODB_URI` and `GEMINI_API_KEY`. For cloud storage, also configure `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, and `AWS_BUCKET_NAME`. Password recovery needs `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS`; `SMTP_FROM` is optional. Keep secrets private and never commit `.env`.
 
 ### 3. Install & Start the Backend
 ```bash
@@ -55,8 +67,13 @@ The Vite development server will spin up on port `5173`. Open [http://localhost:
 
 ## 📱 Features
 
-1. **Mobile-Locked Camera to PDF**: When tapping the camera FAB or scan buttons on a mobile device, pictures are converted client-side directly into clean, standardized A4 PDF files using `jsPDF` prior to upload.
-2. **MongoDB Base64 Vault Storage**: All report documents are stored directly inside the MongoDB database as Base64-encoded Data URLs, eliminating AWS S3 dependency.
-3. **Structured Gemini AI Extraction**: Google Gemini extracts lab markers, vitals, active medications, checkup summaries, and diet suggestions from uploads, saving them in MongoDB.
-4. **Global Auth Lockout**: Root-level route guards completely lock the application if logged out.
-5. **Interactive Dashboard Filtering**: Filter extracted clinical vitals and lab metrics dynamically by individual reports or view cumulative family trends.
+## Account and privacy behavior
+
+- Register or sign in with one email; family profiles and report ownership are scoped to that account.
+- Random session identifiers are stored hashed in MongoDB and delivered in an HttpOnly cookie.
+- Authenticated endpoints manage profiles, uploads, file renames, deletion, and AI chat. Report files are never served from a public URL.
+- S3 is preferred when configured. Without S3 settings, files use the backend `uploads/` folder for local development. Configure S3 for durable cloud storage.
+- Gemini runs only for explicit chat requests, including selected reports or camera/file attachments. Answers are health information, not diagnosis or a replacement for a clinician.
+- Password recovery uses short-lived email codes. Account deletion requires the password and typing `DELETE`.
+
+Set backend `FRONTEND_ORIGIN` when deploying. Optionally set frontend `VITE_API_PROXY_TARGET` for local proxying or `VITE_API_BASE_URL` when calling a deployed API directly.

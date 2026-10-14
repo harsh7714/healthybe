@@ -4,7 +4,7 @@
  */
 const errorHandler = (err, req, res, _next) => {
   let statusCode = err.statusCode || 500
-  let message = err.message || 'Internal Server Error'
+  let message = statusCode >= 500 && !err.isOperational ? 'Something went wrong. Please try again.' : (err.message || 'Request failed.')
   let details = err.details || null
 
   // Handle Mongoose Bad ObjectId (CastError)
@@ -42,6 +42,7 @@ const errorHandler = (err, req, res, _next) => {
 
   const response = {
     success: false,
+    message,
     error: message,
     statusCode,
     timestamp: new Date().toISOString()
