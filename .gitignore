@@ -1,9 +1,10 @@
-# HealthyBe - Version v1.1.0
+# HealthyBe
 
 # Dependency Directories
 node_modules/
 jspm_packages/
 web_modules/
+.pnp.*
 
 # Production/Build Output
 dist/
@@ -13,6 +14,10 @@ out/
 .vite/
 .next/
 .serverless/
+.vercel/
+.netlify/
+coverage/
+*.tsbuildinfo
 
 # Environment Variables & Sensitive Files (IMPORTANT)
 .env
@@ -21,6 +26,9 @@ out/
 .env.test.local
 .env.production.local
 *.env
+.env.*
+!.env.example
+!.env.*.example
 *.pem
 *.key
 *.pfx
@@ -36,6 +44,7 @@ backend/uploads/
 uploads/
 temp/
 tmp/
+backend/data/
 
 # Logs
 logs/
@@ -45,6 +54,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+*.pid
+*.pid.lock
 
 # Editor & System Files
 .vscode/*
@@ -52,11 +63,13 @@ lerna-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.history/
 
 # Heavy Archives & Binaries
 *.zip
