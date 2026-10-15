@@ -326,6 +326,9 @@ h3 { margin-bottom: 7px; font-size: 15px; }
 .assistant-answer code { padding: 1px 5px; border-radius: 5px; color: #c4aaf4; background: rgba(158, 126, 212, .13); font-family: ui-monospace, monospace; font-size: .9em; }
 .chat-storage-setting { margin-top: 14px; padding: 20px; }
 .chat-storage-setting .setting-row { border-bottom: 0; }
+.chat-storage-setting .setting-row > div { min-width: 0; }
+.chat-storage-setting .btn { flex: 0 0 auto; white-space: nowrap; }
+.chat-storage-notice { margin: 8px 0 0; color: #70c8b1; font-size: 12px; }
 .assistant-typing { align-self: flex-start; color: var(--muted); font-size: 12px; }
 
 /* Profile and preferences */
@@ -446,6 +449,8 @@ h3 { margin-bottom: 7px; font-size: 15px; }
   .empty-state .hero-actions { flex-direction: column; }
   .page-wrap > section + section { margin-top: 22px; }
   .panel, .profile-card, .account-settings-card { padding: 16px; }
+  .chat-storage-setting .setting-row { align-items: stretch; flex-direction: column; }
+  .chat-storage-setting .btn { width: 100%; }
   .home-bottom { padding: 18px; }
   .page-wrap:has(.account-page) { padding-bottom: 18px; }
   .account-page { min-height: calc(100dvh - 68px - 68px - 28px - 18px - env(safe-area-inset-bottom)); padding: 12px 0; }
