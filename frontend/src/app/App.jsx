@@ -35,6 +35,11 @@ export default function App() {
     authApi.me().then(async result => {
       if (!live) return
       setUser(result.user)
+      if (!result.user) {
+        setMembersState([])
+        setReports([])
+        return
+      }
       const [profileList, reportList] = await Promise.all([profilesApi.list(), reportsApi.list()])
       if (live) { setMembersState(profileList); setReports(reportList); setActiveIdState(current => profileList.some(member => member.id === current) ? current : (profileList[0]?.id || 'self')) }
     }).catch(() => { if (live) { setUser(null); setMembersState([]); setReports([]) } }).finally(() => { if (live) setAuthReady(true) })
