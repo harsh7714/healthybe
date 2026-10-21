@@ -8,7 +8,7 @@ const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || DEFAULT_PORT),
   mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/healthybe',
-  frontendOrigin: process.env.FRONTEND_ORIGIN || DEFAULT_FRONTEND_ORIGIN,
+  frontendOrigin: (process.env.FRONTEND_ORIGIN || DEFAULT_FRONTEND_ORIGIN).replace(/\/+$/, ''),
 }
 
 function validateEnv() {
