@@ -5,7 +5,7 @@ const Report = require('../models/report.model')
 const Profile = require('../models/profile.model')
 const AppError = require('../utils/AppError')
 const isAllowedReportFile = require('../utils/isAllowedReportFile')
-const { saveReport, readReport, removeReport, hasS3 } = require('../../services/reportStorage')
+const storage = require('./storage')
 
 function toReportResponse(report) {
   const id = String(report._id)
@@ -19,7 +19,7 @@ function toReportResponse(report) {
     status: 'COMPLETED',
     date: report.date || report.createdAt,
     fileUrl: `/api/reports/${id}/file`,
-    storage: report.s3Url === 'local' ? 'local' : (hasS3() ? 'cloud' : 'local'),
+    storage: storage.getStorageType(report),
   }
 }
 
@@ -31,7 +31,7 @@ async function uploadReport(user, data, file) {
   if (!await Profile.exists({ userId, id: profileId })) throw messageError('Selected family profile was not found.', 404)
 
   const safeName = path.basename(file.originalname).replace(/[\\/:*?"<>|]/g, '_').slice(0, 160)
-  const stored = await saveReport(`${userId}/${profileId}/${crypto.randomUUID()}${path.extname(safeName)}`, file.buffer, file.mimetype)
+  const stored = await storage.save(`${userId}/${profileId}/${crypto.randomUUID()}${path.extname(safeName)}`, file.buffer, file.mimetype)
   let report
   try {
     report = await Report.create({
@@ -47,7 +47,7 @@ async function uploadReport(user, data, file) {
       date: new Date().toISOString(),
     })
   } catch (error) {
-    await removeReport({ s3Key: stored.key, s3Url: stored.storage === 'local' ? 'local' : null })
+    await storage.remove({ s3Key: stored.key, s3Url: stored.storage === 'local' ? 'local' : null })
     throw error
   }
   return toReportResponse(report)
@@ -70,13 +70,13 @@ async function renameReport(user, id, data) {
 async function getReportFile(user, id) {
   const report = await Report.findOne({ _id: id, userId: String(user._id) })
   if (!report) throw messageError('Report not found.', 404)
-  return { buffer: await readReport(report), mimeType: report.mimeType, name: report.name }
+  return { buffer: await storage.read(report), mimeType: report.mimeType, name: report.name }
 }
 
 async function deleteReport(user, id) {
   const report = await Report.findOne({ _id: id, userId: String(user._id) })
   if (!report) throw messageError('Report not found.', 404)
-  await removeReport(report)
+  await storage.remove(report)
   await report.deleteOne()
 }
 

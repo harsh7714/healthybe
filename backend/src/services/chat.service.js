@@ -2,8 +2,8 @@ const Profile = require('../models/profile.model')
 const Report = require('../models/report.model')
 const AppError = require('../utils/AppError')
 const isAllowedReportFile = require('../utils/isAllowedReportFile')
-const { readReport } = require('../../services/reportStorage')
-const { answerHealthQuestion } = require('../../services/healthChat')
+const storage = require('./storage')
+const { answerHealthQuestion } = require('./gemini.service')
 const chatValidator = require('../validators/chat.validator')
 
 async function sendMessage(user, data, file) {
@@ -22,7 +22,7 @@ async function sendMessage(user, data, file) {
   if (data.reportId) {
     const report = await Report.findOne({ _id: data.reportId, userId, profileId })
     if (!report) throw messageError('Report not found for this profile.', 404)
-    const buffer = await readReport(report)
+    const buffer = await storage.read(report)
     attachment = { data: buffer.toString('base64'), mimeType: report.mimeType }
   } else if (file) {
     attachment = { data: file.buffer.toString('base64'), mimeType: file.mimetype }

@@ -8,8 +8,8 @@ const Session = require('../models/session.model')
 const ChatSession = require('../models/chatSession.model')
 const PasswordReset = require('../models/passwordReset.model')
 const AppError = require('../utils/AppError')
-const { sendPasswordResetCode } = require('../../services/passwordEmail')
-const { removeReport } = require('../../services/reportStorage')
+const emailService = require('./email.service')
+const storage = require('./storage')
 
 const COOKIE = 'healthybe_session'
 const cookieMaxAge = 30 * 24 * 60 * 60 * 1000
@@ -74,7 +74,7 @@ async function requestPasswordReset(emailValue) {
     await PasswordReset.deleteMany({ email })
     await PasswordReset.create({ email, codeHash: await bcrypt.hash(code, 10), expiresAt: new Date(Date.now() + 10 * 60 * 1000) })
     try {
-      await sendPasswordResetCode(email, code)
+      await emailService.sendPasswordResetCode(email, code)
     } catch (error) {
       await PasswordReset.deleteMany({ email })
       console.warn('Password reset email could not be delivered.')
@@ -98,7 +98,7 @@ async function deleteAccount(userId, data) {
   const user = await User.findById(userId)
   if (!await bcrypt.compare(String(data.password || ''), user.password)) throw messageError('Password is incorrect.', 401)
   const reports = await Report.find({ userId: String(user._id) })
-  await Promise.all(reports.map(removeReport))
+  await Promise.all(reports.map(storage.remove))
   await Promise.all([
     Report.deleteMany({ userId: String(user._id) }), Profile.deleteMany({ userId: String(user._id) }),
     ChatSession.deleteMany({ userId: String(user._id) }), Session.deleteMany({ userId: String(user._id) }),

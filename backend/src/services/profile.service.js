@@ -5,7 +5,7 @@ const Report = require('../models/report.model')
 const User = require('../models/user.model')
 const ChatSession = require('../models/chatSession.model')
 const AppError = require('../utils/AppError')
-const { removeReport } = require('../../services/reportStorage')
+const storage = require('./storage')
 
 const ownerId = user => String(user._id)
 
@@ -63,7 +63,7 @@ async function deleteProfile(user, id) {
   const profile = await Profile.findOne({ userId, id })
   if (!profile) throw messageError('Profile not found.', 404)
   const reports = await Report.find({ userId, profileId: id })
-  await Promise.all(reports.map(removeReport))
+  await Promise.all(reports.map(storage.remove))
   await profile.deleteOne()
   await Promise.all([
     Report.deleteMany({ userId, profileId: id }),
