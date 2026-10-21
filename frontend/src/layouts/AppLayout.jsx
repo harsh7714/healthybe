@@ -1,5 +1,5 @@
-import Navbar from '@components/Navbar'
-import BottomNav from '@components/BottomNav'
+import Navbar from './Navbar'
+import BottomNav from './BottomNav'
 
 export default function AppLayout({ children, dark, setDark, activeMember, members, activeId, setActiveId, user }) {
   return <div className={`app ${dark ? 'dark' : 'light'}`}>
