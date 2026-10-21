@@ -1,4 +1,4 @@
-import { apiRequest, apiUrl, jsonRequest } from './client.js'
+import { apiRequest, apiUrl, jsonRequest } from '@services/api'
 
 export const reportsApi = {
   list: profileId => apiRequest(`/reports${profileId ? `?profileId=${encodeURIComponent(profileId)}` : ''}`),

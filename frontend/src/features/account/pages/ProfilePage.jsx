@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import Icon from '@/shared/components/ui/Icon'
-import { Heading } from '@/shared/components/ui/Shared'
+import Icon from '@components/Icon'
+import Heading from '@components/Heading'
 
 export default function ProfilePage() {
   const { dark, setDark, members, activeId, user, addProfile, deleteProfile } = useOutletContext()

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import Icon from '@/shared/components/ui/Icon'
-import { Heading } from '@/shared/components/ui/Shared'
+import Icon from '@components/Icon'
+import Heading from '@components/Heading'
 import { ReportList, ReportUploader } from '../components/ReportLibrary'
 
 export default function UploadPage() {

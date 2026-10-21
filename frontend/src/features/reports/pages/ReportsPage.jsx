@@ -1,8 +1,8 @@
 import React from 'react'
 import { useOutletContext } from 'react-router-dom'
-import Icon from '@/shared/components/ui/Icon'
+import Icon from '@components/Icon'
 import { ReportList } from '../components/ReportLibrary'
-import { Heading } from '@/shared/components/ui/Shared'
+import Heading from '@components/Heading'
 
 export default function ReportsPage() {
   const { reports, members, activeMember, activeId, setReports } = useOutletContext()

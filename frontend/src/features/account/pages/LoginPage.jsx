@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import AccountLayout from '../components/AccountLayout'
-import { authApi } from '@/services/api'
+import { authApi } from '@features/auth/services/auth.api'
 
 export default function LoginPage() {
   const { setUser, refreshData } = useOutletContext(), navigate = useNavigate(), location = useLocation()

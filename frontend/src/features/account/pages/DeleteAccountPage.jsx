@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
 import AccountLayout from '../components/AccountLayout'
-import { authApi } from '@/services/api'
+import { authApi } from '@features/auth/services/auth.api'
 
 export default function DeleteAccountPage() {
   const { setUser, setReports, setMembers } = useOutletContext(), navigate = useNavigate()

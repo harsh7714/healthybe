@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useOutletContext } from 'react-router-dom'
-import Icon from '@/shared/components/ui/Icon'
-import { chatApi } from '@/services/api'
+import Icon from '@components/Icon'
+import { chatApi } from '@features/chat/services/chat.api'
+import { CHAT_SUGGESTIONS, HEALTH_INFORMATION_DISCLAIMER } from '@constants/messages'
 
 function formatInline(text) {
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, index) => part.startsWith('**') && part.endsWith('**') ? <strong key={index}>{part.slice(2, -2)}</strong> : part.startsWith('`') && part.endsWith('`') ? <code key={index}>{part.slice(1, -1)}</code> : part)
@@ -87,7 +88,7 @@ export default function ChatPage() {
 
   return <div className="chat-screen">
     <section className="assistant-conversation" aria-label="Conversation">
-      {!messages.length ? <div className="assistant-welcome"><span className="assistant-mark"><Icon name="spark" size={22}/></span><p className="eyebrow">HealthyBe AI · {activeMember?.name || 'My profile'}</p><h1>Hello, {activeMember?.name || 'there'}</h1><p className="assistant-subtitle">What would you like help understanding today?</p><div className="assistant-suggestions">{['Help me understand a health report', 'What should I ask my doctor?', 'Explain a medical term simply'].map(item => <button key={item} type="button" onClick={() => setQuestion(item)}>{item}</button>)}</div></div> : <div className="assistant-messages">{messages.map((message, index) => <article className={`assistant-message ${message.sender}`} key={`${index}-${message.sender}`}><span className="assistant-message-label">{message.sender === 'user' ? 'You' : 'HealthyBe AI'}</span>{message.sender === 'ai' ? <FormattedAnswer text={message.text}/> : <p>{message.text}</p>}</article>)}{busy && <p className="assistant-typing" role="status">HealthyBe AI is thinking…</p>}{error && <p className="form-error" role="alert">{error}</p>}<div ref={bottom}/></div>}
+      {!messages.length ? <div className="assistant-welcome"><span className="assistant-mark"><Icon name="spark" size={22}/></span><p className="eyebrow">HealthyBe AI · {activeMember?.name || 'My profile'}</p><h1>Hello, {activeMember?.name || 'there'}</h1><p className="assistant-subtitle">What would you like help understanding today?</p><div className="assistant-suggestions">{CHAT_SUGGESTIONS.map(item => <button key={item} type="button" onClick={() => setQuestion(item)}>{item}</button>)}</div></div> : <div className="assistant-messages">{messages.map((message, index) => <article className={`assistant-message ${message.sender}`} key={`${index}-${message.sender}`}><span className="assistant-message-label">{message.sender === 'user' ? 'You' : 'HealthyBe AI'}</span>{message.sender === 'ai' ? <FormattedAnswer text={message.text}/> : <p>{message.text}</p>}</article>)}{busy && <p className="assistant-typing" role="status">HealthyBe AI is thinking…</p>}{error && <p className="form-error" role="alert">{error}</p>}<div ref={bottom}/></div>}
     </section>
     <div className="assistant-composer-wrap">
       {openFiles && <section className="assistant-file-menu glass"><div className="assistant-file-menu-head"><strong>Files for {activeMember?.name || 'selected profile'}</strong><Link to="/dashboard" onClick={() => setOpenFiles(false)}>Manage uploads</Link></div><div className="assistant-file-list">{profileReports.length ? profileReports.map(report => <button key={report.id} type="button" className={report.id === reportId ? 'selected' : ''} onClick={() => { setReportId(report.id); setPhoto(null); setOpenFiles(false) }}><Icon name={report.type === 'IMAGE' ? 'camera' : 'file'} size={16}/><span>{report.name}</span></button>) : <p>No reports for this profile. <Link to="/dashboard">Upload one</Link></p>}</div><button className="assistant-upload-action" type="button" onClick={() => fileInput.current?.click()}><Icon name="upload" size={15}/> Upload a new file</button></section>}
@@ -100,7 +101,7 @@ export default function ChatPage() {
         <input value={question} onChange={event => setQuestion(event.target.value)} placeholder="Ask a health question…" aria-label="Ask a health question"/>
         <button className="send" type="submit" aria-label="Send question" disabled={busy || (!question.trim() && !photo && !selectedReport)}><Icon name="send" size={18}/></button>
       </form>
-      <p className="assistant-note">Helpful health information, not a diagnosis or a substitute for a clinician.</p>
+      <p className="assistant-note">{HEALTH_INFORMATION_DISCLAIMER}</p>
     </div>
   </div>
 }

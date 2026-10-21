@@ -1,4 +1,4 @@
-import { apiRequest } from './client.js'
+import { apiRequest } from '@services/api'
 
 export const chatApi = {
   send: ({ message, profileId, history, reportId, file }) => {

@@ -1,6 +1,7 @@
 import React from 'react'
-import Icon from '@/shared/components/ui/Icon'
-import { ActionLink, Feature } from '@/shared/components/ui/Shared'
+import Icon from '@components/Icon'
+import ActionLink from '@components/ActionLink'
+import Feature from '@components/Feature'
 
 function IntroCard() {
   return <div className="hero-visual">

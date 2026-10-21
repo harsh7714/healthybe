@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Icon from '@/shared/components/ui/Icon'
-import { reportsApi } from '@/services/api'
+import Icon from '@components/Icon'
+import { reportsApi } from '@features/reports/services/report.api'
 
 const sizeLabel = bytes => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1048576).toFixed(1)} MB`
 

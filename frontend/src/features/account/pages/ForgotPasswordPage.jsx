@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AccountLayout from '../components/AccountLayout'
-import { authApi } from '@/services/api'
+import { authApi } from '@features/auth/services/auth.api'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState(''), [code, setCode] = useState(''), [password, setPassword] = useState(''), [stage, setStage] = useState(0), [notice, setNotice] = useState(''), [error, setError] = useState('')
