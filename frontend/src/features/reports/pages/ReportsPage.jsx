@@ -1,11 +1,9 @@
-import React from 'react'
-import { useOutletContext } from 'react-router-dom'
-import Icon from '@components/Icon'
-import { ReportList } from '../components/ReportLibrary'
+import { useProfiles } from '@context/ProfileContext'
+import ReportList from '../components/ReportList'
 import Heading from '@components/Heading'
 
 export default function ReportsPage() {
-  const { reports, members, activeMember, activeId, setReports } = useOutletContext()
+  const { reports, members, activeMember, activeId } = useProfiles()
   const profileReports = reports.filter(report => report.profileId === activeId)
 
   return <>
@@ -21,7 +19,7 @@ export default function ReportsPage() {
           <span className="small-text">{profileReports.length} {profileReports.length === 1 ? 'file' : 'files'} in this session</span>
         </div>
       </div>
-      <ReportList reports={reports} members={members} setReports={setReports} memberId={activeId}/>
+      <ReportList reports={reports} members={members} memberId={activeId}/>
     </section>
   </>
 }
