@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
 
-const apiRouter = require('../routes')
+const apiRouter = require('./routes')
 const requestLogger = require('./middleware/requestLogger.middleware')
 const { apiLimiter } = require('./middleware/rateLimit.middleware')
 const errorHandler = require('./middleware/error.middleware')
