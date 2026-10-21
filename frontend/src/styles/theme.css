@@ -1,12 +1,35 @@
 /* Theme-specific overrides */
-.light .profile-menu { border-color: rgba(181, 52, 91, .22); background-color: #fff; box-shadow: 0 18px 44px rgba(91, 26, 51, .22); }
-.light .profile-switcher[open] > .profile-menu { background: #fff !important; }
-.light .profile-option { background-color: #fff; }
-.light .profile-switcher[open] .profile-option { background: #fff !important; }
-.light .profile-option:hover, .light .profile-option.selected { background-color: #fff0f4; }
-.light .glass { box-shadow: 0 14px 38px rgba(91, 26, 51, .07); }
-.light .btn-primary { color: #fff; background: linear-gradient(135deg, #df4f7a, #c9255b); }
-.light .hero-card { background: rgba(255,255,255,.84); }
-.dark .chat-file-chip:hover, .dark .chat-file-chip.selected { color: var(--text); background: rgba(255,111,145,.13); }
-.light .assistant-message.ai .assistant-message-label { color: #268d78; }
-.light .assistant-answer strong { color: #277c70; }
+.light .profile-menu {
+  border-color: rgba(181, 52, 91, 0.22);
+  background-color: #fff;
+  box-shadow: 0 18px 44px rgba(91, 26, 51, 0.22);
+}
+.light .profile-switcher[open] > .profile-menu {
+  background: #fff !important;
+}
+.light .profile-option {
+  background-color: #fff;
+}
+.light .profile-switcher[open] .profile-option {
+  background: #fff !important;
+}
+.light .profile-option:hover,
+.light .profile-option.selected {
+  background-color: #fff0f4;
+}
+.light .glass {
+  box-shadow: 0 14px 38px rgba(91, 26, 51, 0.07);
+}
+.light .btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, #df4f7a, #c9255b);
+}
+.light .hero-card {
+  background: rgba(255, 255, 255, 0.84);
+}
+.light .assistant-message.ai .assistant-message-label {
+  color: #268d78;
+}
+.light .assistant-answer strong {
+  color: #277c70;
+}

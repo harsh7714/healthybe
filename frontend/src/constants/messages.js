@@ -4,4 +4,5 @@ export const CHAT_SUGGESTIONS = [
   'Explain a medical term simply',
 ]
 
-export const HEALTH_INFORMATION_DISCLAIMER = 'Helpful health information, not a diagnosis or a substitute for a clinician.'
+export const HEALTH_INFORMATION_DISCLAIMER =
+  'Helpful health information, not a diagnosis or a substitute for a clinician.'

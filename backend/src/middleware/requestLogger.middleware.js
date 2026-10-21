@@ -12,7 +12,9 @@ const requestLogger = (req, res, next) => {
     const status = res.statusCode
     const statusPrefix = status >= 500 ? '🔴' : status >= 400 ? '🟡' : '🟢'
 
-    logger.info(`${statusPrefix} [${timestamp}] ${req.method} ${req.originalUrl} ${status} - ${duration}ms`)
+    logger.info(
+      `${statusPrefix} [${timestamp}] ${req.method} ${req.originalUrl} ${status} - ${duration}ms`,
+    )
   })
 
   next()

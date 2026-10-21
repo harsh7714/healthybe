@@ -8,7 +8,10 @@ const memoryUpload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, callback) => {
     const allowed = allowedTypes.includes(file.mimetype)
-    callback(allowed ? null : new AppError('Only PDF, JPEG, PNG, and WEBP files are supported.', 400), allowed)
+    callback(
+      allowed ? null : new AppError('Only PDF, JPEG, PNG, and WEBP files are supported.', 400),
+      allowed,
+    )
   },
 })
 

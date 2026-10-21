@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useAuth } from '@context/AuthContext'
-import { useProfiles } from '@context/ProfileContext'
-import { useTheme } from '@context/ThemeContext'
+import { useAuth } from '@context/useAuth'
+import { useProfiles } from '@context/useProfiles'
+import { useTheme } from '@context/useTheme'
 
 export function useProfileSettings() {
   const { user } = useAuth()
@@ -28,7 +28,8 @@ export function useProfileSettings() {
   }
 
   async function remove(profile) {
-    if (!window.confirm(`Delete ${profile.name}'s profile and reports? This cannot be undone.`)) return
+    if (!window.confirm(`Delete ${profile.name}'s profile and reports? This cannot be undone.`))
+      return
     try {
       await deleteProfile(profile.id)
     } catch (problem) {
@@ -37,7 +38,10 @@ export function useProfileSettings() {
   }
 
   function clearChats() {
-    if (!window.confirm('Delete all HealthyBe AI chats saved in this browser? This cannot be undone.')) return
+    if (
+      !window.confirm('Delete all HealthyBe AI chats saved in this browser? This cannot be undone.')
+    )
+      return
     try {
       let removed = 0
       for (let index = localStorage.length - 1; index >= 0; index -= 1) {
@@ -47,15 +51,31 @@ export function useProfileSettings() {
           removed += 1
         }
       }
-      setChatNotice(removed ? 'Saved chats have been deleted from this browser.' : 'There are no saved chats to delete.')
+      setChatNotice(
+        removed
+          ? 'Saved chats have been deleted from this browser.'
+          : 'There are no saved chats to delete.',
+      )
     } catch {
       setChatNotice('Unable to clear saved chats in this browser.')
     }
   }
 
   return {
-    user, members, activeId, dark, setDark,
-    name, setName, relation, setRelation, error, busy, chatNotice,
-    add, remove, clearChats,
+    user,
+    members,
+    activeId,
+    dark,
+    setDark,
+    name,
+    setName,
+    relation,
+    setRelation,
+    error,
+    busy,
+    chatNotice,
+    add,
+    remove,
+    clearChats,
   }
 }

@@ -16,7 +16,8 @@ exports.rename = asyncHandler(async (req, res) => {
 
 exports.readFile = asyncHandler(async (req, res) => {
   const file = await reportService.getReportFile(req.user, req.params.id)
-  res.type(file.mimeType || 'application/octet-stream')
+  res
+    .type(file.mimeType || 'application/octet-stream')
     .set({
       'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
       'Cache-Control': 'private, no-store',

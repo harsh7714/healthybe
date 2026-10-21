@@ -25,7 +25,15 @@ async function listProfiles(user) {
   const userId = ownerId(user)
   let profiles = await Profile.find({ userId }).sort({ createdAt: 1 })
   if (!profiles.some(profile => profile.id === 'self')) {
-    profiles.unshift(await Profile.create({ userId, id: 'self', name: user.name, relation: 'Self', initials: user.name.slice(0, 2).toUpperCase() }))
+    profiles.unshift(
+      await Profile.create({
+        userId,
+        id: 'self',
+        name: user.name,
+        relation: 'Self',
+        initials: user.name.slice(0, 2).toUpperCase(),
+      }),
+    )
   }
   return profiles.map(toProfileResponse)
 }
@@ -40,7 +48,12 @@ async function createProfile(user, data) {
     name,
     relation,
     age: data.age ? String(data.age) : '',
-    initials: name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase(),
+    initials: name
+      .split(/\s+/)
+      .map(part => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
   })
   return toProfileResponse(profile)
 }
@@ -50,9 +63,18 @@ async function updateProfile(user, id, data) {
   for (const key of ['name', 'relation', 'age']) {
     if (data[key] !== undefined) updates[key] = String(data[key]).trim()
   }
-  if (updates.name) updates.initials = updates.name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()
+  if (updates.name)
+    updates.initials = updates.name
+      .split(/\s+/)
+      .map(part => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
   if (id === 'self' && updates.name) await User.updateOne({ _id: user._id }, { name: updates.name })
-  const profile = await Profile.findOneAndUpdate({ userId: ownerId(user), id }, updates, { new: true, runValidators: true })
+  const profile = await Profile.findOneAndUpdate({ userId: ownerId(user), id }, updates, {
+    new: true,
+    runValidators: true,
+  })
   if (!profile) throw messageError('Profile not found.', 404)
   return toProfileResponse(profile)
 }

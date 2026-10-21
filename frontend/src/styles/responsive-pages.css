@@ -1,0 +1,59 @@
+@media (max-width: 850px) {
+  .hero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 6px 0 38px;
+    text-align: center;
+  }
+  .hero > div:first-child > p {
+    margin-right: auto;
+    margin-left: auto;
+    font-size: 13px;
+  }
+  .hero-actions {
+    justify-content: center;
+  }
+  .hero-visual {
+    min-height: 260px;
+  }
+  .orb {
+    width: 220px;
+  }
+  .hero-card {
+    width: 255px;
+  }
+  .floating-note {
+    right: 0;
+    bottom: 8px;
+  }
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+  .feature-card {
+    min-height: auto;
+  }
+  .home-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .page-heading > .btn,
+  .page-heading > .model-badge {
+    align-self: flex-start;
+  }
+  .report-grid,
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .upload-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .upload-dashboard-grid .upload-zone {
+    min-height: 250px;
+  }
+}

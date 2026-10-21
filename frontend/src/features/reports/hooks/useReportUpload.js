@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useProfiles } from '@context/ProfileContext'
+import { useProfiles } from '@context/useProfiles'
 import { reportsApi } from '../services/report.api'
 
 export function useReportUpload(activeId) {
@@ -16,8 +16,12 @@ export function useReportUpload(activeId) {
     try {
       const uploaded = await Promise.all(files.map(file => reportsApi.upload(file, activeId)))
       setReports(current => [...uploaded, ...current])
-      const location = uploaded.some(report => report.storage === 'local') ? 'local development storage' : 'cloud storage'
-      setNotice(`${uploaded.length} ${uploaded.length === 1 ? 'file' : 'files'} uploaded to ${location}.`)
+      const location = uploaded.some(report => report.storage === 'local')
+        ? 'local development storage'
+        : 'cloud storage'
+      setNotice(
+        `${uploaded.length} ${uploaded.length === 1 ? 'file' : 'files'} uploaded to ${location}.`,
+      )
     } catch (error) {
       setNotice(error.message)
     } finally {

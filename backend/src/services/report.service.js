@@ -26,12 +26,21 @@ function toReportResponse(report) {
 async function uploadReport(user, data, file) {
   const profileId = String(data.profileId || '')
   if (!file) throw messageError('Choose a file to upload.', 400)
-  if (!isAllowedReportFile(file)) throw messageError('The file content does not match its PDF or image type.', 400)
+  if (!isAllowedReportFile(file))
+    throw messageError('The file content does not match its PDF or image type.', 400)
   const userId = String(user._id)
-  if (!await Profile.exists({ userId, id: profileId })) throw messageError('Selected family profile was not found.', 404)
+  if (!(await Profile.exists({ userId, id: profileId })))
+    throw messageError('Selected family profile was not found.', 404)
 
-  const safeName = path.basename(file.originalname).replace(/[\\/:*?"<>|]/g, '_').slice(0, 160)
-  const stored = await storage.save(`${userId}/${profileId}/${crypto.randomUUID()}${path.extname(safeName)}`, file.buffer, file.mimetype)
+  const safeName = path
+    .basename(file.originalname)
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .slice(0, 160)
+  const stored = await storage.save(
+    `${userId}/${profileId}/${crypto.randomUUID()}${path.extname(safeName)}`,
+    file.buffer,
+    file.mimetype,
+  )
   let report
   try {
     report = await Report.create({
@@ -62,7 +71,11 @@ async function listReports(user, profileIdValue) {
 
 async function renameReport(user, id, data) {
   const name = String(data.name || '').trim()
-  const report = await Report.findOneAndUpdate({ _id: id, userId: String(user._id) }, { name }, { new: true })
+  const report = await Report.findOneAndUpdate(
+    { _id: id, userId: String(user._id) },
+    { name },
+    { new: true },
+  )
   if (!report) throw messageError('Report not found.', 404)
   return toReportResponse(report)
 }

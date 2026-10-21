@@ -1,0 +1,114 @@
+.profile-switcher {
+  position: relative;
+}
+.profile-switcher > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.profile-switcher > summary::-webkit-details-marker {
+  display: none;
+}
+.profile-switcher[open] > summary {
+  border-color: var(--accent);
+}
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 5;
+  display: grid;
+  width: min(280px, calc(100vw - 28px));
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid rgba(255, 180, 201, 0.3);
+  border-radius: 15px;
+  background-color: #180a13;
+  opacity: 1;
+  box-shadow: 0 18px 44px rgba(22, 8, 16, 0.48);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.profile-switcher[open] > .profile-menu {
+  background: #10060c !important;
+  opacity: 1 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.profile-menu > .eyebrow {
+  padding: 3px 8px 4px;
+}
+.profile-option {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--text);
+  background-color: #180a13;
+  text-align: left;
+}
+.profile-switcher[open] .profile-option {
+  background: #10060c !important;
+}
+.profile-option:hover,
+.profile-option.selected {
+  border-color: var(--border);
+  background-color: #321322;
+}
+.profile-option > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+.profile-option small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.profile-check {
+  color: var(--accent);
+}
+.profile-manage {
+  padding: 10px 8px 3px;
+  border-top: 1px solid var(--border);
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 11px;
+}
+.avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  color: #57172f;
+  font-size: 12px;
+  font-weight: 700;
+  background: linear-gradient(140deg, #ffc5d3, #ffe7ed);
+}
+.avatar.lilac {
+  color: #532657;
+  background: linear-gradient(140deg, #efcdf2, #f9e6fa);
+}
+.avatar.peach {
+  color: #6b3027;
+  background: linear-gradient(140deg, #ffd4c7, #ffede6);
+}
+.avatar.blue {
+  color: #3e326b;
+  background: linear-gradient(140deg, #d8d0ff, #eeebff);
+}
+.avatar.small {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+}
+.avatar.big {
+  width: 48px;
+  height: 48px;
+  font-size: 17px;
+}

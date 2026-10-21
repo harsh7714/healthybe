@@ -1,0 +1,163 @@
+.assistant-composer-wrap {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 820px);
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0 0 18px;
+}
+.assistant-composer {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface-strong);
+  box-shadow: 0 12px 38px rgba(16, 6, 12, 0.2);
+}
+.assistant-composer:focus-within {
+  border-color: rgba(255, 111, 145, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(255, 111, 145, 0.08),
+    0 12px 38px rgba(16, 6, 12, 0.2);
+}
+.assistant-composer input:not([type='file']) {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  background: transparent;
+  font-size: 14px;
+}
+.assistant-composer input::placeholder {
+  color: var(--subtle);
+}
+.assistant-composer .attach,
+.assistant-composer .send {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+.assistant-composer .send {
+  color: var(--on-accent);
+  background: linear-gradient(135deg, #ffa9bd, #f45b86);
+}
+.assistant-composer .send:disabled {
+  color: var(--muted);
+  background: var(--surface);
+}
+.assistant-note {
+  margin: 8px 8px 0;
+  color: var(--subtle);
+  font-size: 10px;
+  text-align: center;
+}
+.assistant-attachment {
+  display: flex;
+  max-width: 100%;
+  width: max-content;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  background: var(--surface-strong);
+  font-size: 11px;
+}
+.assistant-attachment span {
+  max-width: min(55vw, 450px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assistant-attachment svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.assistant-file-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% - 9px);
+  left: 0;
+  z-index: 4;
+  max-height: min(300px, 45dvh);
+  padding: 13px;
+  overflow-y: auto;
+  border-color: var(--border);
+  background: var(--surface-strong);
+  box-shadow: 0 18px 48px rgba(16, 6, 12, 0.35);
+}
+.assistant-file-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 3px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.assistant-file-menu-head strong {
+  font-size: 12px;
+}
+.assistant-file-menu-head a,
+.assistant-file-list p a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 11px;
+}
+.assistant-file-list {
+  display: grid;
+  gap: 5px;
+  padding: 9px 0;
+}
+.assistant-file-list > button {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+}
+.assistant-file-list > button:hover,
+.assistant-file-list > button.selected {
+  border-color: var(--border);
+  background: var(--glow);
+}
+.assistant-file-list > button svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.assistant-file-list > button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.assistant-file-list p {
+  margin: 4px 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.assistant-upload-action {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px 2px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  color: var(--accent);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 650;
+  text-align: left;
+}

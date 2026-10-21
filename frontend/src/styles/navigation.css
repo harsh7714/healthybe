@@ -1,0 +1,117 @@
+.topbar,
+.page-wrap,
+.mobile-nav {
+  position: relative;
+  z-index: 1;
+}
+.topbar {
+  z-index: 10;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+  width: min(100%, 1260px);
+  height: 76px;
+  margin: 0 auto;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--border);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+.brand-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffc4d2, #f15b86);
+  box-shadow: 0 0 23px var(--glow);
+}
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+.brand-word {
+  display: inline-flex;
+  gap: 0;
+  color: var(--text);
+  letter-spacing: -0.65px;
+}
+.brand-word > span:last-child {
+  color: var(--accent);
+}
+.desktop-nav {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 5px;
+}
+.desktop-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+.desktop-nav a:hover,
+.desktop-nav a.active {
+  color: var(--text);
+  background: var(--surface);
+}
+.desktop-nav a.active {
+  color: var(--accent);
+  box-shadow: inset 0 -2px var(--accent);
+}
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.icon-btn,
+.profile-chip {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+.icon-btn {
+  width: 38px;
+  padding: 0;
+}
+.profile-chip {
+  padding: 4px 10px 4px 5px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 12px;
+}
+.profile-chip:hover,
+.icon-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}

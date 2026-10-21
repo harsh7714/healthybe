@@ -29,7 +29,15 @@ export function usePasswordReset() {
   }
 
   return {
-    email, setEmail, code, setCode, password, setPassword,
-    stage, notice, error, submit,
+    email,
+    setEmail,
+    code,
+    setCode,
+    password,
+    setPassword,
+    stage,
+    notice,
+    error,
+    submit,
   }
 }

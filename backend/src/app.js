@@ -14,17 +14,37 @@ const app = express()
 
 app.set('trust proxy', 1)
 
-app.route('/')
-  .get((_req, res) => res.status(200).json({ status: 'ok', service: 'HealthyBe API', version: '1.1.0' }))
+app
+  .route('/')
+  .get((_req, res) =>
+    res.status(200).json({ status: 'ok', service: 'HealthyBe API', version: '1.1.0' }),
+  )
   .head((_req, res) => res.status(200).end())
 
-app.route('/health')
-  .get((_req, res) => res.status(200).json({ status: 'ok', db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' }))
+app
+  .route('/health')
+  .get((_req, res) =>
+    res.status(200).json({
+      status: 'ok',
+      db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    }),
+  )
   .head((_req, res) => res.status(200).end())
 
-app.use(cors({ origin: env.frontendOrigin, credentials: true, methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type'] }))
+app.use(
+  cors({
+    origin: env.frontendOrigin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+  }),
+)
 app.use((req, res, next) => {
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.get('origin') && req.get('origin') !== env.frontendOrigin) {
+  if (
+    !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
+    req.get('origin') &&
+    req.get('origin') !== env.frontendOrigin
+  ) {
     return res.status(403).json({ message: 'Request origin is not allowed.' })
   }
   next()

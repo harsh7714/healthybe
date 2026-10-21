@@ -6,7 +6,10 @@ const logger = require('../utils/logger')
 
 const errorHandler = (err, req, res, _next) => {
   let statusCode = err.statusCode || 500
-  let message = statusCode >= 500 && !err.isOperational ? 'Something went wrong. Please try again.' : (err.message || 'Request failed.')
+  let message =
+    statusCode >= 500 && !err.isOperational
+      ? 'Something went wrong. Please try again.'
+      : err.message || 'Request failed.'
   let details = err.details || null
 
   // Handle Mongoose Bad ObjectId (CastError)
@@ -47,7 +50,7 @@ const errorHandler = (err, req, res, _next) => {
     message,
     error: message,
     statusCode,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 
   if (!err.responseBody && details) {

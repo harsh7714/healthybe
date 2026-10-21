@@ -1,16 +1,67 @@
 /* Shared page headings and family profile switcher */
-.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
-.page-heading h1 { margin-bottom: 7px; }
-.page-heading p { margin-bottom: 0; font-size: 12px; line-height: 1.6; }
-.member-strip { display: flex; gap: 8px; margin: 0 0 22px; overflow-x: auto; padding: 2px 1px 5px; }
-.member-pill { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 6px 11px 6px 6px; border: 1px solid var(--border); border-radius: 24px; color: var(--muted); background: transparent; font-size: 11px; }
-.member-pill.active { color: var(--text); border-color: rgba(255,111,145,.48); background: var(--surface); }
-.member-pill .small-text { font-size: 10px; }
+.page-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.page-heading h1 {
+  margin-bottom: 7px;
+}
+.page-heading p {
+  margin-bottom: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.member-strip {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 22px;
+  overflow-x: auto;
+  padding: 2px 1px 5px;
+}
+.member-pill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 11px 6px 6px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 11px;
+}
+.member-pill.active {
+  color: var(--text);
+  border-color: rgba(255, 111, 145, 0.48);
+  background: var(--surface);
+}
+.member-pill .small-text {
+  font-size: 10px;
+}
 
 /* Honest dashboard empty state */
-.empty-state { max-width: 740px; margin: 42px auto 20px; padding: 35px; text-align: center; }
-.empty-state .empty-icon { margin: 0 auto 15px; }
-.empty-state h2 { margin: 10px 0; }
-.empty-state p, .chat-empty > p { max-width: 560px; margin: 0 auto; color: var(--muted); font-size: 12px; line-height: 1.7; }
-.empty-state .hero-actions { justify-content: center; }
-
+.empty-state {
+  max-width: 740px;
+  margin: 42px auto 20px;
+  padding: 35px;
+  text-align: center;
+}
+.empty-state .empty-icon {
+  margin: 0 auto 15px;
+}
+.empty-state h2 {
+  margin: 10px 0;
+}
+.empty-state p {
+  max-width: 560px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.empty-state .hero-actions {
+  justify-content: center;
+}

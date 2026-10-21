@@ -10,7 +10,13 @@ const reportValidator = require('../validators/report.validator')
 const router = express.Router()
 
 router.use('/reports', requireAuth)
-router.post('/upload', uploadLimiter, requireAuth, memoryUpload.single('file'), reportController.upload)
+router.post(
+  '/upload',
+  uploadLimiter,
+  requireAuth,
+  memoryUpload.single('file'),
+  reportController.upload,
+)
 router.get('/reports', reportController.list)
 router.patch('/reports/:id', validate(reportValidator.validateRename), reportController.rename)
 router.get('/reports/:id/file', reportController.readFile)

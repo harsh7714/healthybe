@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@context/AuthContext'
-import { useProfiles } from '@context/ProfileContext'
+import { useAuth } from '@context/useAuth'
+import { useProfiles } from '@context/useProfiles'
 import { ROUTES } from '@constants/routes'
 import { authApi } from '@features/auth/services/auth.api'
 

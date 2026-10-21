@@ -1,8 +1,8 @@
 .app {
   --page: #160e16;
-  --surface: rgba(43, 23, 36, .72);
+  --surface: rgba(43, 23, 36, 0.72);
   --surface-strong: #291725;
-  --border: rgba(255, 171, 194, .16);
+  --border: rgba(255, 171, 194, 0.16);
   --text: #fff5f8;
   --muted: #c1aab4;
   --subtle: #927987;
@@ -10,14 +10,14 @@
   --accent-strong: #ff527f;
   --accent-soft: #ffd5df;
   --on-accent: #481126;
-  --glow: rgba(242, 59, 112, .22);
+  --glow: rgba(242, 59, 112, 0.22);
 }
 
 .app.light {
   --page: #fff5f7;
-  --surface: rgba(255, 255, 255, .76);
+  --surface: rgba(255, 255, 255, 0.76);
   --surface-strong: #fff;
-  --border: rgba(139, 41, 76, .14);
+  --border: rgba(139, 41, 76, 0.14);
   --text: #351624;
   --muted: #765967;
   --subtle: #9d8290;
@@ -25,5 +25,5 @@
   --accent-strong: #c9255b;
   --accent-soft: #ffe1e9;
   --on-accent: #fff;
-  --glow: rgba(214, 56, 105, .13);
+  --glow: rgba(214, 56, 105, 0.13);
 }

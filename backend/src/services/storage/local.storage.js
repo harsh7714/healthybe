@@ -5,8 +5,11 @@ const path = require('path')
 const root = path.resolve(__dirname, '../../../uploads')
 
 function isLocalReport(report) {
-  return typeof report.s3Url === 'string' && (
-    report.s3Url.startsWith('data:') || report.s3Url === 'local' || report.s3Url.startsWith('/uploads/')
+  return (
+    typeof report.s3Url === 'string' &&
+    (report.s3Url.startsWith('data:') ||
+      report.s3Url === 'local' ||
+      report.s3Url.startsWith('/uploads/'))
   )
 }
 
@@ -38,7 +41,8 @@ async function read(report) {
 
 async function remove(report) {
   if (typeof report.s3Url === 'string' && report.s3Url.startsWith('data:')) return
-  if (report.s3Url === 'local') return fs.rm(path.join(root, path.basename(report.s3Key)), { force: true })
+  if (report.s3Url === 'local')
+    return fs.rm(path.join(root, path.basename(report.s3Key)), { force: true })
   if (typeof report.s3Url === 'string' && report.s3Url.startsWith('/uploads/')) {
     return fs.rm(path.join(root, path.basename(report.s3Url)), { force: true })
   }

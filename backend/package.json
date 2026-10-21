@@ -5,7 +5,10 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "lint": "eslint src scripts eslint.config.js",
+    "format": "prettier --write \"src/**/*.js\" \"scripts/**/*.js\" eslint.config.js",
+    "format:check": "prettier --check \"src/**/*.js\" \"scripts/**/*.js\" eslint.config.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
@@ -18,5 +21,11 @@
     "mongoose": "^9.7.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^10.1.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10"
   }
 }

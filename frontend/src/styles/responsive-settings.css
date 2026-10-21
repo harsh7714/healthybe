@@ -1,0 +1,54 @@
+@media (max-width: 850px) {
+  .empty-state {
+    margin: 20px auto;
+    padding: 27px 19px;
+  }
+  .empty-state .hero-actions {
+    flex-direction: column;
+  }
+  .page-wrap > section + section {
+    margin-top: 22px;
+  }
+  .panel,
+  .profile-card,
+  .account-settings-card {
+    padding: 16px;
+  }
+  .chat-storage-setting .setting-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .chat-storage-setting .btn {
+    width: 100%;
+  }
+  .home-bottom {
+    padding: 18px;
+  }
+  .page-wrap:has(.account-page) {
+    padding-bottom: 18px;
+  }
+  .account-page {
+    min-height: calc(100dvh - 68px - 68px - 28px - 18px - env(safe-area-inset-bottom));
+    padding: 12px 0;
+  }
+  .account-card {
+    width: 100%;
+    padding: clamp(20px, 6vw, 28px);
+  }
+  .page-heading {
+    margin-bottom: 20px;
+  }
+  .page-heading h1 {
+    overflow-wrap: anywhere;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

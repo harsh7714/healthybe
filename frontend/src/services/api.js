@@ -8,7 +8,8 @@ export async function apiRequest(path, options = {}) {
   const response = await fetch(apiUrl(path), { credentials: 'include', ...options })
   const type = response.headers.get('content-type') || ''
   const payload = type.includes('application/json') ? await response.json() : null
-  if (!response.ok) throw new Error(payload?.message || payload?.error || `Request failed (${response.status})`)
+  if (!response.ok)
+    throw new Error(payload?.message || payload?.error || `Request failed (${response.status})`)
   return payload
 }
 
