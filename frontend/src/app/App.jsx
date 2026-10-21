@@ -13,7 +13,7 @@ function AppContent() {
   const profiles = useProfiles()
   const context = useMemo(() => ({ ...theme, ...auth, ...profiles }), [theme, auth, profiles])
 
-  return <AppLayout {...context}><Outlet context={context}/></AppLayout>
+  return <AppLayout {...context}><Outlet/></AppLayout>
 }
 
 export default function App() {

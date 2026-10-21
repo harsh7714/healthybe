@@ -10,4 +10,5 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   LOGOUT: '/logout',
   DELETE_ACCOUNT: '/delete-account',
+  NOT_FOUND: '*',
 }
