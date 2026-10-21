@@ -2,10 +2,10 @@
   "name": "healthybe-server",
   "version": "1.1.0",
   "description": "HealthyBe family health records API with Gemini chat",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",

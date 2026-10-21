@@ -1,0 +1,11 @@
+const API_VERSION_PREFIX = '/api/v1'
+const LEGACY_API_PREFIX = '/api'
+const DEFAULT_PORT = 3001
+const DEFAULT_FRONTEND_ORIGIN = 'http://localhost:5173'
+
+module.exports = {
+  API_VERSION_PREFIX,
+  DEFAULT_FRONTEND_ORIGIN,
+  DEFAULT_PORT,
+  LEGACY_API_PREFIX,
+}
