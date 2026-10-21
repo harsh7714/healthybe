@@ -2,8 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const mongoose = require('mongoose')
 const {
   DeleteObjectsCommand,
-  GetBucketVersioningCommand,
-  ListObjectsV2Command,
+  ListObjectVersionsCommand,
   S3Client,
 } = require('@aws-sdk/client-s3')
 
@@ -11,22 +10,39 @@ const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/healthybe
 const bucket = process.env.AWS_BUCKET_NAME
 const databaseName = new URL(mongoUri).pathname.split('/').filter(Boolean)[0]
 
-async function listBucketObjects(client) {
-  const objects = []
-  let continuationToken
+async function listBucketVersions(client) {
+  const versions = []
+  let keyMarker
+  let versionIdMarker
+  let isTruncated = false
   do {
-    const page = await client.send(new ListObjectsV2Command({ Bucket: bucket, ContinuationToken: continuationToken }))
-    objects.push(...(page.Contents || []).map(({ Key }) => ({ Key })))
-    continuationToken = page.NextContinuationToken
-  } while (continuationToken)
-  return objects
+    const page = await client.send(new ListObjectVersionsCommand({
+      Bucket: bucket,
+      KeyMarker: keyMarker,
+      VersionIdMarker: versionIdMarker,
+    }))
+    versions.push(
+      ...(page.Versions || []).map(({ Key, VersionId }) => ({ Key, VersionId })),
+      ...(page.DeleteMarkers || []).map(({ Key, VersionId }) => ({ Key, VersionId })),
+    )
+    isTruncated = Boolean(page.IsTruncated)
+    if (isTruncated) {
+      if (!page.NextKeyMarker) throw new Error('S3 returned a truncated version listing without a continuation marker.')
+      keyMarker = page.NextKeyMarker
+      versionIdMarker = page.NextVersionIdMarker
+    } else {
+      keyMarker = undefined
+      versionIdMarker = undefined
+    }
+  } while (isTruncated)
+  return versions
 }
 
-async function deleteBucketObjects(client, objects) {
-  for (let index = 0; index < objects.length; index += 1000) {
+async function deleteBucketVersions(client, versions) {
+  for (let index = 0; index < versions.length; index += 1000) {
     const result = await client.send(new DeleteObjectsCommand({
       Bucket: bucket,
-      Delete: { Objects: objects.slice(index, index + 1000), Quiet: true },
+      Delete: { Objects: versions.slice(index, index + 1000), Quiet: true },
     }))
     if (result.Errors?.length) throw new Error(`S3 reported ${result.Errors.length} object deletion error(s).`)
   }
@@ -54,16 +70,14 @@ async function clearData() {
     const documentCounts = await Promise.all(collections.map(async ({ name }) => (
       mongoose.connection.db.collection(name).countDocuments()
     )))
-    const objectVersioning = await client.send(new GetBucketVersioningCommand({ Bucket: bucket }))
-    if (objectVersioning.Status) throw new Error('Refusing to clear a versioned bucket; its object versions need a separate reviewed purge.')
-    const objects = await listBucketObjects(client)
+    const versions = await listBucketVersions(client)
 
     console.log(`Target database: ${databaseName} (${documentCounts.reduce((sum, count) => sum + count, 0)} documents in ${collections.length} collections)`)
-    console.log(`Target S3 bucket: ${bucket} in ${process.env.AWS_REGION} (${objects.length} objects)`)
-    await deleteBucketObjects(client, objects)
-    if ((await listBucketObjects(client)).length) throw new Error('S3 bucket is not empty after deletion; database was preserved.')
+    console.log(`Target S3 bucket: ${bucket} in ${process.env.AWS_REGION} (${versions.length} object versions and delete markers)`)
+    await deleteBucketVersions(client, versions)
+    if ((await listBucketVersions(client)).length) throw new Error('S3 bucket still has object versions or delete markers; database was preserved.')
     await mongoose.connection.dropDatabase()
-    console.log('S3 objects deleted and MongoDB database dropped. The S3 bucket itself and local files were preserved.')
+    console.log('All S3 object versions and delete markers were deleted, and the MongoDB database was dropped. The S3 bucket and local files were preserved.')
   } finally {
     await mongoose.disconnect()
     client.destroy()

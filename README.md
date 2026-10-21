@@ -77,3 +77,15 @@ The Vite development server will spin up on port `5173`. Open [http://localhost:
 - Password recovery uses short-lived email codes. Account deletion requires the password and typing `DELETE`.
 
 Set backend `FRONTEND_ORIGIN` when deploying. Optionally set frontend `VITE_API_PROXY_TARGET` for local proxying or `VITE_API_BASE_URL` when calling a deployed API directly.
+
+## Clear database and report storage
+
+The cleanup script permanently deletes every collection in the configured MongoDB database and all current S3 object versions and delete markers in the configured bucket. It keeps the S3 bucket, other AWS resources, and local files in `backend/uploads/`.
+
+From the `backend/` directory, run the script with the exact database and bucket names configured in `backend/.env`:
+
+```bash
+node scripts/clearDb.js --confirm=database-name:bucket-name
+```
+
+Replace `database-name:bucket-name` with the exact database and bucket names from `backend/.env`; the script prints the required confirmation argument if the names do not match. It prints the database document count and S3 version count before deletion. MongoDB and AWS credentials must have database drop and `s3:ListBucketVersions`, `s3:DeleteObject`, and `s3:DeleteObjectVersion` permissions. This operation cannot be undone.
