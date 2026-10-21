@@ -42,7 +42,7 @@ const errorHandler = (err, req, res, _next) => {
     logger.warn(`[WARN] ${req.method} ${req.originalUrl} (${statusCode}): ${message}`)
   }
 
-  const response = {
+  const response = err.responseBody || {
     success: false,
     message,
     error: message,
@@ -50,11 +50,11 @@ const errorHandler = (err, req, res, _next) => {
     timestamp: new Date().toISOString()
   }
 
-  if (details) {
+  if (!err.responseBody && details) {
     response.details = details
   }
 
-  if (process.env.NODE_ENV === 'development' && err.stack) {
+  if (!err.responseBody && process.env.NODE_ENV === 'development' && err.stack) {
     response.stack = err.stack
   }
 
