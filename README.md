@@ -1,91 +1,83 @@
-# HealthyBe - Family Health Management System
+﻿# HealthyBe
 
-**Version**: `v1.1.0`
+**Version:** 1.1.0
 
-HealthyBe keeps each family member's report library separated under one account. The React/Vite frontend connects to an Express + MongoDB API; reports are stored in AWS S3 when configured, and are only sent to Gemini when a user explicitly asks a question about them in AI chat. Uploading a file does not trigger analysis or extraction.
+HealthyBe is a family health management app. The frontend uses React and Vite. The backend is an Express API backed by MongoDB and Mongoose, with optional S3 report storage, Gemini chat, and SMTP password recovery.
 
----
+## Project structure
 
-## 🛠️ Project Structure
+- [frontend/](./frontend/) contains the React + Vite client.
+- [backend/](./backend/) contains the Express API and its MVC/service layers.
+- [docs/architecture.md](./docs/architecture.md) describes the code organization and how to add features.
 
-The frontend is organized by feature, with shared UI and API code kept separate. The backend follows Express layers.
+The frontend groups pages, components, hooks, and endpoint functions by feature. The backend separates route mapping, controllers, services, models, middleware, and configuration.
 
-```text
-frontend/src/
-├── app/                    # App state, routes and account guard
-├── features/
-│   ├── account/            # Authentication, profiles and settings
-│   ├── chat/               # Health assistant
-│   ├── home/               # Home screen
-│   └── reports/            # Upload and report management
-├── services/api/           # HTTP client plus auth/profile/report/chat APIs
-├── shared/                 # Reusable components, layout and navigation data
-├── index.css               # Global styles and responsive theme
-└── main.jsx                # Frontend entry point
+## Local setup
 
-backend/
-├── config/                 # Database setup
-├── middleware/             # Authentication, rate limits and errors
-├── models/                 # MongoDB models
-├── routes/                 # API endpoint groups
-├── services/               # Gemini, email and file storage
-└── utils/                  # Shared helpers
-```
+You need Node.js with npm and a running MongoDB instance. The default MongoDB URI is mongodb://localhost:27017/healthybe.
 
-- **[`frontend/`](./frontend)**: React + Vite client.
-- **[`backend/`](./backend)**: Express API with MongoDB (Mongoose), private report storage, and Gemini chat.
+1. Create local environment files from the examples:
 
----
+   PowerShell:
 
-## 🚀 Setup & Installation
+   > Copy-Item backend/.env.example backend/.env
+   >
+   > Copy-Item frontend/.env.example frontend/.env
 
-### 1. Database (MongoDB)
-Make sure you have MongoDB running locally, or prepare a MongoDB Atlas connection URI. By default, it expects:
-`mongodb://localhost:27017/healthybe`
+2. Set MONGODB_URI in backend/.env if MongoDB is not running at the default URI. The examples list all supported keys with empty values; fill credentials only for integrations you use.
 
-### 2. Configure Environment Variables
-Configure `backend/.env` with `MONGODB_URI` and `GEMINI_API_KEY`. For cloud storage, also configure `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, and `AWS_BUCKET_NAME`. Password recovery needs `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS`; `SMTP_FROM` is optional. Keep secrets private and never commit `.env`.
+3. Install dependencies from each app folder:
 
-### 3. Install & Start the Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
-The server will start on port `3001` (health check available at `http://localhost:3001/health`).
+   > cd backend
+   >
+   > npm install
+   >
+   > cd ../frontend
+   >
+   > npm install
 
-### 4. Install & Start the Frontend
-In another terminal:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-The Vite development server will spin up on port `5173`. Open [http://localhost:5173](http://localhost:5173) in your browser.
+4. Start MongoDB, then start the backend from backend/:
 
----
+   > npm run dev
 
-## 📱 Features
+   The API listens on port 3001 by default. Check http://localhost:3001/health for server and database status.
 
-## Account and privacy behavior
+5. In a second terminal, start the frontend from frontend/:
 
-- Register or sign in with one email; family profiles and report ownership are scoped to that account.
-- Random session identifiers are stored hashed in MongoDB and delivered in an HttpOnly cookie.
-- Authenticated endpoints manage profiles, uploads, file renames, deletion, and AI chat. Report files are never served from a public URL.
-- S3 is preferred when configured. Without S3 settings, files use the backend `uploads/` folder for local development. Configure S3 for durable cloud storage.
-- Gemini runs only for explicit chat requests, including selected reports or camera/file attachments. Answers are health information, not diagnosis or a replacement for a clinician.
-- Password recovery uses short-lived email codes. Account deletion requires the password and typing `DELETE`.
+   > npm run dev
 
-Set backend `FRONTEND_ORIGIN` when deploying. Optionally set frontend `VITE_API_PROXY_TARGET` for local proxying or `VITE_API_BASE_URL` when calling a deployed API directly.
+   Open http://localhost:5173.
 
-## Clear database and report storage
+## Environment configuration
 
-The cleanup script permanently deletes every collection in the configured MongoDB database and all current S3 object versions and delete markers in the configured bucket. It keeps the S3 bucket, other AWS resources, and local files in `backend/uploads/`.
+Backend settings are read from backend/.env. MONGODB_URI, PORT, NODE_ENV, and FRONTEND_ORIGIN have development defaults. AWS report storage is enabled only when AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and AWS_BUCKET_NAME are all set; otherwise uploads use backend/uploads/ for local development. GEMINI_API_KEY enables chat. Password recovery requires SMTP_HOST, SMTP_USER, and SMTP_PASS; set SMTP_PORT to 587 (or your provider's port) when configuring SMTP. SMTP_FROM is optional.
 
-From the `backend/` directory, run the script with the exact database and bucket names configured in `backend/.env`:
+Frontend settings are read from frontend/.env. VITE_API_BASE_URL defaults to /api/v1. VITE_API_PROXY_TARGET defaults to http://localhost:3001 for the Vite development proxy. For a deployed API, set VITE_API_BASE_URL to its API base URL.
 
-```bash
-node scripts/clearDb.js --confirm=database-name:bucket-name
-```
+New requests use /api/v1. The previous /api routes remain available as a compatibility alias. The frontend proxy forwards /api and /health to the backend during development.
 
-Replace `database-name:bucket-name` with the exact database and bucket names from `backend/.env`; the script prints the required confirmation argument if the names do not match. It prints the database document count and S3 version count before deletion. MongoDB and AWS credentials must have database drop and `s3:ListBucketVersions`, `s3:DeleteObject`, and `s3:DeleteObjectVersion` permissions. This operation cannot be undone.
+## Useful commands
+
+Run these from the relevant app folder:
+
+- Backend: npm run dev, npm start, npm run lint, npm run format:check
+- Frontend: npm run dev, npm run build, npm run lint, npm run format:check
+
+Run npm run format in either app to apply Prettier formatting.
+
+## Privacy and report storage
+
+- Session identifiers are stored hashed in MongoDB and delivered through an HttpOnly cookie.
+- Report files are private. Uploading a file does not trigger Gemini analysis; files are sent to Gemini only when a user explicitly asks a chat question about them.
+- S3 is used when fully configured. Otherwise, local development files are saved under backend/uploads/.
+- Set FRONTEND_ORIGIN to the deployed frontend origin when deploying the API.
+
+## Clear database and S3 report data
+
+The cleanup script permanently deletes every collection in the configured MongoDB database and all object versions and delete markers in the configured S3 bucket. It keeps the S3 bucket, other AWS resources, and local files under backend/uploads/.
+
+From backend/, run the script with the exact database and bucket names configured in backend/.env:
+
+> node scripts/clearDb.js --confirm=database-name:bucket-name
+
+Replace database-name:bucket-name with the exact names from the environment. The script prints the required confirmation value if they do not match, and displays the database document count and S3 version count before deletion. MongoDB and AWS credentials need database drop and S3 list/delete version permissions. This operation cannot be undone.
