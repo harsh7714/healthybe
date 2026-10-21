@@ -3,10 +3,10 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 
 const apiRouter = require('../routes')
-const requestLogger = require('../middleware/requestLogger')
-const { apiLimiter } = require('../middleware/rateLimiter')
-const errorHandler = require('../middleware/errorHandler')
-const AppError = require('../utils/AppError')
+const requestLogger = require('./middleware/requestLogger.middleware')
+const { apiLimiter } = require('./middleware/rateLimit.middleware')
+const errorHandler = require('./middleware/error.middleware')
+const notFound = require('./middleware/notFound.middleware')
 const { env } = require('./config/env')
 const { API_VERSION_PREFIX } = require('./config/constants')
 
@@ -43,9 +43,7 @@ versionedApiRouter.use(apiRouter)
 app.use(API_VERSION_PREFIX, versionedApiRouter)
 app.use(apiRouter)
 
-app.all('*', (req, _res, next) => {
-  next(new AppError(`Cannot find endpoint ${req.method} ${req.originalUrl} on this server.`, 404))
-})
+app.all('*', notFound)
 app.use(errorHandler)
 
 module.exports = app

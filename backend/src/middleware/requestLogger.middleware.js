@@ -1,6 +1,8 @@
 /**
  * requestLogger - Structured HTTP request and response logging middleware.
  */
+const logger = require('../utils/logger')
+
 const requestLogger = (req, res, next) => {
   const start = Date.now()
   const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19)
@@ -10,7 +12,7 @@ const requestLogger = (req, res, next) => {
     const status = res.statusCode
     const statusPrefix = status >= 500 ? '🔴' : status >= 400 ? '🟡' : '🟢'
 
-    console.log(`${statusPrefix} [${timestamp}] ${req.method} ${req.originalUrl} ${status} - ${duration}ms`)
+    logger.info(`${statusPrefix} [${timestamp}] ${req.method} ${req.originalUrl} ${status} - ${duration}ms`)
   })
 
   next()

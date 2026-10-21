@@ -1,22 +1,17 @@
 const express = require('express')
-const multer = require('multer')
 const crypto = require('crypto')
 const path = require('path')
 const Report = require('../models/Report')
 const Profile = require('../models/Profile')
-const requireAuth = require('../middleware/requireAuth')
+const requireAuth = require('../src/middleware/auth.middleware')
 const { saveReport, readReport, removeReport, hasS3 } = require('../services/reportStorage')
-const AppError = require('../utils/AppError')
-const { uploadLimiter } = require('../middleware/rateLimiter')
-const isAllowedReportFile = require('../utils/isAllowedReportFile')
+const { uploadLimiter } = require('../src/middleware/rateLimit.middleware')
+const { memoryUpload } = require('../src/middleware/upload.middleware')
+const isAllowedReportFile = require('../src/utils/isAllowedReportFile')
 
 const router = express.Router()
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: (_req, file, cb) => {
-  const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
-  cb(allowed.includes(file.mimetype) ? null : new AppError('Only PDF, JPEG, PNG, and WEBP files are supported.', 400), allowed.includes(file.mimetype))
-} })
 router.use('/api/reports', requireAuth)
-router.post('/api/upload', uploadLimiter, requireAuth, upload.single('file'), async (req, res, next) => {
+router.post('/api/upload', uploadLimiter, requireAuth, memoryUpload.single('file'), async (req, res, next) => {
   try {
     const file = req.file
     const profileId = String(req.body.profileId || '')

@@ -1,6 +1,6 @@
 const crypto = require('crypto')
-const Session = require('../models/Session')
-const User = require('../models/User')
+const Session = require('../../models/Session')
+const User = require('../../models/User')
 
 module.exports = async function requireAuth(req, res, next) {
   try {

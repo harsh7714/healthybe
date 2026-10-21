@@ -1,7 +1,7 @@
 const express = require('express')
 const Profile = require('../models/Profile')
 const Report = require('../models/Report')
-const requireAuth = require('../middleware/requireAuth')
+const requireAuth = require('../src/middleware/auth.middleware')
 const { removeReport } = require('../services/reportStorage')
 
 const router = express.Router()

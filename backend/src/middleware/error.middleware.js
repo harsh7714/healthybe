@@ -2,6 +2,8 @@
  * errorHandler - Global error-handling middleware for Express.
  * Formats operational and programmer errors into consistent JSON responses.
  */
+const logger = require('../utils/logger')
+
 const errorHandler = (err, req, res, _next) => {
   let statusCode = err.statusCode || 500
   let message = statusCode >= 500 && !err.isOperational ? 'Something went wrong. Please try again.' : (err.message || 'Request failed.')
@@ -35,9 +37,9 @@ const errorHandler = (err, req, res, _next) => {
 
   // Log non-operational (unexpected) errors
   if (!err.isOperational && statusCode === 500) {
-    console.error(`[CRITICAL ERROR] ${req.method} ${req.originalUrl}:`, err)
+    logger.error(`[CRITICAL ERROR] ${req.method} ${req.originalUrl}:`, err)
   } else {
-    console.warn(`[WARN] ${req.method} ${req.originalUrl} (${statusCode}): ${message}`)
+    logger.warn(`[WARN] ${req.method} ${req.originalUrl} (${statusCode}): ${message}`)
   }
 
   const response = {

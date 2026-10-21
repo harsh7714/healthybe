@@ -1,20 +1,15 @@
 const express = require('express')
-const multer = require('multer')
 const Profile = require('../models/Profile')
 const Report = require('../models/Report')
-const requireAuth = require('../middleware/requireAuth')
+const requireAuth = require('../src/middleware/auth.middleware')
 const { readReport } = require('../services/reportStorage')
 const { answerHealthQuestion } = require('../services/healthChat')
-const AppError = require('../utils/AppError')
-const { aiChatLimiter } = require('../middleware/rateLimiter')
-const isAllowedReportFile = require('../utils/isAllowedReportFile')
+const { aiChatLimiter } = require('../src/middleware/rateLimit.middleware')
+const { memoryUpload } = require('../src/middleware/upload.middleware')
+const isAllowedReportFile = require('../src/utils/isAllowedReportFile')
 
 const router = express.Router()
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: (_req, file, cb) => {
-  const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
-  cb(allowed.includes(file.mimetype) ? null : new AppError('Only PDF, JPEG, PNG, and WEBP files are supported.', 400), allowed.includes(file.mimetype))
-} })
-router.post('/api/chat', aiChatLimiter, requireAuth, upload.single('file'), async (req, res, next) => {
+router.post('/api/chat', aiChatLimiter, requireAuth, memoryUpload.single('file'), async (req, res, next) => {
   try {
     const profileId = String(req.body.profileId || '')
     const profile = await Profile.findOne({ userId: String(req.user._id), id: profileId })
