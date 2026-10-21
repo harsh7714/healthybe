@@ -8,7 +8,7 @@ import ProfilePage from '@/features/profiles/pages/ProfilePage.jsx'
 import LoginPage from '@/features/auth/pages/LoginPage.jsx'
 import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage.jsx'
 import LogoutPage from '@/features/auth/pages/LogoutPage.jsx'
-import DeleteAccountPage from '@/features/account/pages/DeleteAccountPage.jsx'
+import DeleteAccountPage from '@/features/settings/pages/DeleteAccountPage.jsx'
 import RegisterPage from '@/features/auth/pages/RegisterPage.jsx'
 import RequireAccount from './RequireAccount.jsx'
 
