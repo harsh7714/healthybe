@@ -1,6 +1,6 @@
 const express = require('express')
-const Profile = require('../models/Profile')
-const Report = require('../models/Report')
+const Profile = require('../src/models/profile.model')
+const Report = require('../src/models/report.model')
 const requireAuth = require('../src/middleware/auth.middleware')
 const { removeReport } = require('../services/reportStorage')
 
@@ -33,7 +33,7 @@ router.patch('/api/profiles/:id', async (req, res, next) => {
     const updates = {}
     for (const key of ['name', 'relation', 'age']) if (req.body[key] !== undefined) updates[key] = String(req.body[key]).trim()
     if (updates.name) updates.initials = updates.name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()
-    if (req.params.id === 'self' && updates.name) await require('../models/User').updateOne({ _id: req.user._id }, { name: updates.name })
+    if (req.params.id === 'self' && updates.name) await require('../src/models/user.model').updateOne({ _id: req.user._id }, { name: updates.name })
     const profile = await Profile.findOneAndUpdate({ userId: owner(req), id: req.params.id }, updates, { new: true, runValidators: true })
     if (!profile) return res.status(404).json({ message: 'Profile not found.' })
     res.json(shape(profile))
@@ -49,7 +49,7 @@ router.delete('/api/profiles/:id', async (req, res, next) => {
     await profile.deleteOne()
     await Promise.all([
       Report.deleteMany({ userId: owner(req), profileId: req.params.id }),
-      require('../models/ChatSession').deleteMany({ userId: owner(req), profileId: req.params.id }),
+      require('../src/models/chatSession.model').deleteMany({ userId: owner(req), profileId: req.params.id }),
     ])
     res.json({ ok: true })
   } catch (error) { next(error) }

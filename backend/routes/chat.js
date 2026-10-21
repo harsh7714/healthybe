@@ -1,6 +1,6 @@
 const express = require('express')
-const Profile = require('../models/Profile')
-const Report = require('../models/Report')
+const Profile = require('../src/models/profile.model')
+const Report = require('../src/models/report.model')
 const requireAuth = require('../src/middleware/auth.middleware')
 const { readReport } = require('../services/reportStorage')
 const { answerHealthQuestion } = require('../services/healthChat')

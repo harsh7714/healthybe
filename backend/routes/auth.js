@@ -1,10 +1,10 @@
 const express = require('express')
 const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
-const User = require('../models/User')
-const Profile = require('../models/Profile')
-const Session = require('../models/Session')
-const PasswordReset = require('../models/PasswordReset')
+const User = require('../src/models/user.model')
+const Profile = require('../src/models/profile.model')
+const Session = require('../src/models/session.model')
+const PasswordReset = require('../src/models/passwordReset.model')
 const requireAuth = require('../src/middleware/auth.middleware')
 const { sendPasswordResetCode } = require('../services/passwordEmail')
 const { authLimiter } = require('../src/middleware/rateLimit.middleware')
@@ -53,8 +53,8 @@ router.post('/api/auth/login', async (req, res, next) => {
     if (!user || !await bcrypt.compare(String(req.body.password || ''), user.password)) return res.status(401).json({ message: 'Email or password is incorrect.' })
     await Promise.all([
       Profile.updateMany({ userId: email }, { userId: String(user._id) }),
-      require('../models/Report').updateMany({ userId: email }, { userId: String(user._id) }),
-      require('../models/ChatSession').updateMany({ userId: email }, { userId: String(user._id) }),
+      require('../src/models/report.model').updateMany({ userId: email }, { userId: String(user._id) }),
+      require('../src/models/chatSession.model').updateMany({ userId: email }, { userId: String(user._id) }),
     ])
     await setSession(user, res)
     res.json({ user: publicUser(user) })
@@ -100,8 +100,8 @@ router.delete('/api/auth/account', requireAuth, async (req, res, next) => {
     if (req.body.confirmation !== 'DELETE') return res.status(400).json({ message: 'Type DELETE to confirm account removal.' })
     const user = await User.findById(req.user._id)
     if (!await bcrypt.compare(String(req.body.password || ''), user.password)) return res.status(401).json({ message: 'Password is incorrect.' })
-    const Report = require('../models/Report')
-    const ChatSession = require('../models/ChatSession')
+    const Report = require('../src/models/report.model')
+    const ChatSession = require('../src/models/chatSession.model')
     const reports = await Report.find({ userId: String(user._id) })
     await Promise.all(reports.map(report => require('../services/reportStorage').removeReport(report)))
     await Promise.all([
